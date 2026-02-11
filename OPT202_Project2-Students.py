@@ -82,6 +82,26 @@ def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False)
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
 
+    alpha = 1/np.linalg.norm(A,2)
+
+    if acceleration:
+        print("Running FISTA...")
+
+
+
+
+    else:
+        print("Running ISTA...")
+
+        x = np.zeros(A.shape[1]) # A.shape[1] is the number of columns of A, which is the dimension of x
+        grad_f = A.T@(A@x-b)
+        v = x - alpha*grad_f
+
+        while(np.linalg.norm(grad_f) < tol):
+            for i in range(A.shape[1]):
+                if(v[i]>0):
+
+    
     return x, opt_gap_cost
 
 def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
