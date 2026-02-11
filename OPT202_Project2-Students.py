@@ -82,34 +82,37 @@ def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False)
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
 
-    alpha = 1/((A.T@A).eigs(neigs = 1, symmetric = True))
+    alpha = 1/((A.T@A).eigs(neigs = 1, symmetric = True)[0])
 
     if acceleration:
         print("Running FISTA...")
         l = 0
         gamma = 2*(1-l)/(1+np.sqrt(1+4*l**2))
+        l = (1+np.sqrt(1+4*l**2))/2
         x = np.zeros(A.shape[1]) 
         grad_f = (A.T)@(A@x-b)
         v = x - alpha*grad_f
         k=0
         y = np.zeros(A.shape[1])
-        cost= np.zeros(niter)
-        cost[k] = 1/2*((A*x-b).norm()) + eps*np.linalg.norm(x)
-        while(np.linalg.norm(grad_f) < tol and k<=niter):
-            x+=gamma*y
-            for i in range(A.shape[1]):
+        cost= np.zeros(niter + 1)
+        cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
+        while(np.linalg.norm(grad_f) > tol and k<niter):
+            x=gamma*y
+            for i in range(A.shape[1]):    
                 if v[i]>0 :
                     y[i] = v[i] -alpha *eps
                 if v[i]<0 :
                     y[i] = v[i] + alpha*eps
                 if v[i] == 0:
                     y[i] = 0
-                x+=(1-gamma)*y    
-                grad_f = A.T@(A@x-b)
-                v = x - alpha*grad_f
-                k+=1
-                cost[k] = 1/2*((A*x-b).norm()) + eps*np.linalg.norm(x) 
-        imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(A,b,eps,k)    
+            x+=(1-gamma)*y 
+            gamma = 2*(1-l)/(1+np.sqrt(1+4*l**2))
+            l = (1+np.sqrt(1+4*l**2))/2 
+            grad_f = A.T@(A@x-b)
+            v = x - alpha*grad_f
+            k+=1
+            cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
+        imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(A,b,eps = eps,niter = niter)    
         opt_cost = cost_history[-1]
         opt_gap_cost = cost - opt_cost
 
@@ -121,9 +124,9 @@ def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False)
         grad_f = (A.T)@(A@x-b)
         v = x - alpha*grad_f
         k=0
-        cost= np.zeros(niter)
-        cost[k] = 1/2*((A*x-b).norm()) + eps*np.linalg.norm(x)
-        while(np.linalg.norm(grad_f) < tol and k<=niter):
+        cost= np.zeros(niter + 1)
+        cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
+        while(np.linalg.norm(grad_f) > tol and k<niter):
             for i in range(A.shape[1]):
                 if v[i]>0 :
                     x[i] = v[i] -alpha *eps
@@ -131,11 +134,11 @@ def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False)
                     x[i] = v[i] + alpha*eps
                 if v[i] == 0:
                     x[i] = 0
-                grad_f = A.T@(A@x-b)
-                v = x - alpha*grad_f
-                k+=1
-                cost[k] = 1/2*((A*x-b).norm()) + eps*np.linalg.norm(x)    
-        imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(A,b,eps,k)    
+            grad_f = A.T@(A@x-b)
+            v = x - alpha*grad_f
+            k+=1
+            cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1)  
+        imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(A,b,eps = eps,niter = niter)    
         opt_cost = cost_history[-1]
         opt_gap_cost = cost - opt_cost
 
