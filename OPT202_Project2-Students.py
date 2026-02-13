@@ -100,11 +100,11 @@ def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=
         while(np.linalg.norm(grad_f) > tol and k<niter):
             x=gamma*y
             for i in range(A.shape[1]):    
-                if v[i]>0 :
-                    y[i] = v[i] -alpha *eps
-                if v[i]<0 :
+                if v[i]>eps :
+                    y[i] = v[i] - alpha*eps
+                if v[i]<-eps :
                     y[i] = v[i] + alpha*eps
-                if v[i] == 0:
+                if v[i] >= -eps and v[i] <= eps:
                     y[i] = 0
             x+=(1-gamma)*y 
             gamma = 2*(1-l)/(1+np.sqrt(1+4*l**2))
@@ -129,11 +129,11 @@ def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=
         cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
         while(np.linalg.norm(grad_f) > tol and k<niter):
             for i in range(A.shape[1]):
-                if v[i]>0 :
+                if v[i]>eps :
                     x[i] = v[i] -alpha *eps
-                if v[i]<0 :
+                if v[i]<-eps :
                     x[i] = v[i] + alpha*eps
-                if v[i] == 0:
+                if v[i] >= -eps and v[i] <= eps:
                     x[i] = 0
             grad_f = A.T@(A@x-b)
             v = x - alpha*grad_f
@@ -159,7 +159,7 @@ def douglas_rashford_alg(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-5, ma
                 x[i] = z[i] - eps
             if z[i]<-eps :
                 x[i] = z[i] + eps
-            if (z[i]<=eps and z[i]>=eps):
+            if (z[i]<=eps and z[i]>=-eps):
                 x[i] = 0
         first_member = (A.T)@A + pylops.Identity(A.shape[1])
         second_member = (A.T)@b + 2*x-z
