@@ -9,8 +9,8 @@ def load_image_option_I(file_name = "dog_rgb.npy"):
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(-0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(-0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(-1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(-3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -46,8 +46,8 @@ def load_image_option_II(file_name = "chateau.npy"):
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(-0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(-0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -77,7 +77,7 @@ def load_image_option_II(file_name = "chateau.npy"):
     return Wop, A, b, im, imblur
 
 
-def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False):
+def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=False):
     """ Here you can code your ISTA and FISTA algorithm
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
@@ -144,7 +144,7 @@ def my_fista(A, b, opt_cost, eps=1e-1, niter=100, tol=1e-10, acceleration=False)
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
+def run_program(A, b, Wop, eps_value=10**(-10), baseline_iter=1000, my_iter=1000):
 
     # Baseline from pylops
     imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
