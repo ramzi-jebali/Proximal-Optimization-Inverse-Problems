@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pylops 
+import scipy.sparse.linalg
 
 def load_image_option_I(file_name = "dog_rgb.npy"):
     sampling = 5
@@ -144,7 +145,35 @@ def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=10**(-10), baseline_iter=1000, my_iter=1000):
+def douglas_rashford_alg(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-5, maxiter = 200):
+    print("running douglas rashford ...")
+    z = np.zeros(A.shape[1])
+    x=np.zeros(A.shape[1])
+    k = 0
+    cost= np.zeros(niter + 1)
+    cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
+    grad_f = (A.T)@(A@x-b)
+    while(k<niter and np.linalg.norm(grad_f)>eps):
+        for i in range(A.shape[1]):
+            if z[i]>eps :
+                x[i] = z[i] - eps
+            if z[i]<-eps :
+                x[i] = z[i] + eps
+            if (z[i]<=eps and z[i]>=eps):
+                x[i] = 0
+        first_member = (A.T)@A + pylops.Identity(A.shape[1])
+        second_member = (A.T)@b + 2*x-z
+        y,conv = scipy.sparse.linalg.cg(first_member, second_member,tol,maxiter)
+        z = z + y -x
+        k+=1
+        cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
+    imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(A,b,eps = eps,niter = niter)    
+    opt_cost = cost_history[-1]
+    opt_gap_cost = cost - opt_cost
+
+    return x, opt_gap_cost
+
+def run_program(A, b, Wop, eps_value=10**(-1), baseline_iter=100, my_iter=100):
 
     # Baseline from pylops
     imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
@@ -153,16 +182,19 @@ def run_program(A, b, Wop, eps_value=10**(-10), baseline_iter=1000, my_iter=1000
 
     opt_cost = cost_history[-1]
 
-    # ISTA
-    my_imdeblurfista, opt_gap_cost = my_fista(
-        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=False)
+    # # ISTA
+    # my_imdeblurfista, opt_gap_cost = my_fista(
+    #     A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=False)
 
-    # FISTA
-    my_imdeblurfista1, opt_gap_cost1 = my_fista(
-        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=True)
+    # # FISTA
+    # my_imdeblurfista1, opt_gap_cost1 = my_fista(
+    #     A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=True)
 
-    plt.loglog(opt_gap_cost, 'C0', label='ISTA')
-    plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
+    my_imdeblurfista1, opt_gap_cost1 = douglas_rashford_alg(A, b, opt_cost, eps=eps_value, niter=my_iter, tol=1e-5, maxiter = 200)
+
+    #plt.loglog(opt_gap_cost, 'C0', label='ISTA')
+    #plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
+    plt.loglog(opt_gap_cost1, 'C1', label='douglas rashford')
     plt.grid()
     plt.loglog([3, 30], [1e6, 1e5], 'C0--', label='1/k')
     plt.loglog([3, 30], [.5e5, .5e3], 'C1--', label='1/k2')
@@ -213,3 +245,8 @@ visualise_results(im, imblur, imdeblurfista)
 
 
 
+
+
+
+
+                         
