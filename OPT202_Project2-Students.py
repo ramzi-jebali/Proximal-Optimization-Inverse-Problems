@@ -163,7 +163,7 @@ def douglas_rashford_alg(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-5, ma
                 x[i] = 0
         first_member = (A.T)@A + pylops.Identity(A.shape[1])
         second_member = (A.T)@b + 2*x-z
-        y,conv = scipy.sparse.linalg.cg(first_member, second_member,tol,maxiter)
+        y,conv = scipy.sparse.linalg.cg(first_member, second_member,rtol = tol,maxiter = maxiter)
         z = z + y -x
         k+=1
         cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
