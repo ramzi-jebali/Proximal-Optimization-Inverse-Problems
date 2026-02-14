@@ -10,8 +10,8 @@ def load_image_option_I(file_name = "dog_rgb.npy"):
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(-1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(-3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(-0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(-0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -47,8 +47,8 @@ def load_image_option_II(file_name = "chateau.npy"):
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -78,7 +78,7 @@ def load_image_option_II(file_name = "chateau.npy"):
     return Wop, A, b, im, imblur
 
 
-def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=False):
+def my_fista(A, b, opt_cost, eps=10**(-7), niter=10000, tol=1e-6, acceleration=False):
     """ Here you can code your ISTA and FISTA algorithm
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
@@ -145,7 +145,7 @@ def my_fista(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-10, acceleration=
 
     return x, opt_gap_cost
 
-def douglas_rashford_alg(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-5, maxiter = 200):
+def douglas_rashford_alg(A, b, opt_cost, eps=10**(-7), niter=10000, tol=1e-6, maxiter = 1000):
     print("running douglas rashford ...")
     z = np.zeros(A.shape[1])
     x=np.zeros(A.shape[1])
@@ -173,7 +173,7 @@ def douglas_rashford_alg(A, b, opt_cost, eps=10**(-10), niter=1000, tol=1e-5, ma
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=10**(-1), baseline_iter=100, my_iter=100):
+def run_program(A, b, Wop, eps_value=10**(-7), baseline_iter=10000, my_iter=10000):
 
     # Baseline from pylops
     imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
@@ -182,19 +182,19 @@ def run_program(A, b, Wop, eps_value=10**(-1), baseline_iter=100, my_iter=100):
 
     opt_cost = cost_history[-1]
 
-    # # ISTA
-    # my_imdeblurfista, opt_gap_cost = my_fista(
-    #     A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=False)
+    # ISTA
+    my_imdeblurfista, opt_gap_cost = my_fista(
+        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=False)
 
-    # # FISTA
-    # my_imdeblurfista1, opt_gap_cost1 = my_fista(
-    #     A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=True)
+    # FISTA
+    my_imdeblurfista1, opt_gap_cost1 = my_fista(
+        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=True)
 
-    my_imdeblurfista1, opt_gap_cost1 = douglas_rashford_alg(A, b, opt_cost, eps=eps_value, niter=my_iter, tol=1e-5, maxiter = 200)
+    #my_imdeblurfista1, opt_gap_cost1 = douglas_rashford_alg(A, b, opt_cost, eps=eps_value, niter=my_iter, tol=1e-5, maxiter = 1000)
 
-    #plt.loglog(opt_gap_cost, 'C0', label='ISTA')
-    #plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
-    plt.loglog(opt_gap_cost1, 'C1', label='douglas rashford')
+    plt.loglog(opt_gap_cost, 'C0', label='ISTA')
+    plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
+    #plt.loglog(opt_gap_cost1, 'C1', label='douglas rashford')
     plt.grid()
     plt.loglog([3, 30], [1e6, 1e5], 'C0--', label='1/k')
     plt.loglog([3, 30], [.5e5, .5e3], 'C1--', label='1/k2')
