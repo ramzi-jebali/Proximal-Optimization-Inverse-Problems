@@ -83,7 +83,7 @@ def my_fista(A, b, opt_cost, eps=10**(-7), niter=10000, tol=1e-6, acceleration=F
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
 
-    alpha = 1/((A.T@A).eigs(neigs = 1, symmetric = True)[0])
+    alpha = 1/(2*(A.T@A).eigs(neigs = 1, symmetric = True)[0])
 
     if acceleration:
         print("Running FISTA...")
