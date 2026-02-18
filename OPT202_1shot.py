@@ -268,9 +268,9 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
 
 def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter=100, maxiter_DR=1000, p=1, bz=0.1, bx=0.3):
     
-    print(f"  -> Params: eps={eps_value}, p={p}, blur=({bz}, {bx})")
+    print(f"\n  -> Params: eps={eps_value}, p={p}, blur=({bz}, {bx})")
 
-    filename = f"{OUTPUT_DIR}/opt_cost_baseline_eps{eps_value:.0e}_iter{baseline_iter}_bz{bz}_bx{bx}.npy"    
+    filename = f"baseline_opt_costs/opt_cost_baseline_eps{eps_value:.0e}_iter{baseline_iter}_bz{bz}_bx{bx}.npy"    
     if os.path.exists(filename):
         opt_cost = np.load(filename)
     else:
@@ -366,8 +366,8 @@ start_global = time.time()
 imdeblurfista, imdeblurDR = run_program(A, b, Wop, eps_value, baseline_iter, tol, my_iter, maxiter_DR, p)
 
 end_global = time.time()
-print(f"\nAll done in {end_global - start_global:.2f} seconds.")
-print(f"Results are available in the folder: {OUTPUT_DIR}")
+
+print(f"\nDone in {end_global - start_global:.2f} seconds.")
 
 ## Visualise your image results
 visualise_results(im, imblur, imdeblurfista, imdeblurDR)
