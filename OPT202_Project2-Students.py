@@ -4,15 +4,15 @@ import pylops
 import scipy.sparse.linalg
 import time  # Ajout de l'import time
 
-def load_image_option_I(file_name = "dog_rgb.npy"):
+def load_image_option_I(bz=0.1, bx=0.3):
     sampling = 5
-    im = np.load(file_name)[::sampling, ::sampling, 2]
+    im = np.load("dog_rgb.npy")[::sampling, ::sampling, 2]
     Nz, Nx = im.shape
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(-0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(-0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(-bz * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(-bx * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -41,15 +41,15 @@ def load_image_option_I(file_name = "dog_rgb.npy"):
 
     return Wop, A, b, im, imblur
 
-def load_image_option_II(file_name = "chateau.npy"):
+def load_image_option_II(bz=0.1, bx=0.3):
     sampling = 2
-    im = np.load(file_name)[::sampling, ::sampling, 1]
+    im = np.load("chateau.npy")[::sampling, ::sampling, 1]
     Nz, Nx = im.shape
 
     # Blurring Gaussian operator
     nh = [15, 25]
-    hz = np.exp(0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
-    hx = np.exp(0.3 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
+    hz = np.exp(bz * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
+    hx = np.exp(bx * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
     hz /= np.trapz(hz)  # normalize the integral to 1
     hx /= np.trapz(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
@@ -274,7 +274,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
 
 def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter=100, maxiter_DR=1000):
     
-    print(f"\nParameters: \neps = {eps_value} \ntol = {tol} \nbaseline_iter = {baseline_iter} \nmy_iter = {my_iter} \nmaxiter_DR = {maxiter_DR}")
+    print(f"\nParameters: \nblurring parameters (bz, bx) = ({bz}, {bx})\neps = {eps_value} \ntol = {tol} \nbaseline_iter = {baseline_iter} \nmy_iter = {my_iter} \nmaxiter_DR = {maxiter_DR}")
 
     print("\nRunning baseline FISTA from pylops...")
     start_time = time.time()
@@ -354,15 +354,19 @@ def visualise_results(im, imblur, imdeblurfista, imdeblurDR):
     plt.show()
 
 
-## Load the image according to your option
-Wop, A, b, im, imblur = load_image_option_I()
+## Load the image according to your option : I for the dog, II for the castle
+bz = 0.1 # blurring parameter in the vertical direction (default is 0.1)
+bx = 0.3 # blurring parameter in the horizontal direction (default is 0.3)
+
+Wop, A, b, im, imblur = load_image_option_I(bz, bx)
 
 ## Run program you have coded:
-eps_value = 1e-3
+eps_value = 1e-1
 baseline_iter = 10000
 tol = 1e-20
 my_iter = 1000
 maxiter_DR = 1000
+
 imdeblurfista, imdeblurDR = run_program(A, b, Wop, eps_value, baseline_iter, tol, my_iter, maxiter_DR)
 
 ## Visualise your image results
