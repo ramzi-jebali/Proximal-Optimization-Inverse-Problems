@@ -78,7 +78,7 @@ def load_image_option_II(file_name = "chateau.npy"):
     return Wop, A, b, im, imblur
 
 
-def my_fista(A, b, opt_cost, eps=10**(-1), niter=10000, tol=1e-6, acceleration=False):
+def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=False):
     """ Here you can code your ISTA and FISTA algorithm
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
@@ -202,7 +202,7 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=10000, tol=1e-6, acceleration=F
 
     return x, opt_gap_cost
 
-def douglas_rashford_alg(A, b, opt_cost, eps=10**(-1), niter=10000, tol=1e-6, maxiter = 1000):
+def douglas_rashford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
     # print("Running Douglas-Rachford...")
     # z = np.zeros(A.shape[1])
     # x=np.zeros(A.shape[1])
@@ -258,7 +258,7 @@ def douglas_rashford_alg(A, b, opt_cost, eps=10**(-1), niter=10000, tol=1e-6, ma
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=10**(-1), baseline_iter=10000, my_iter=10000):
+def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
     
     # Baseline from pylops
     imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
@@ -317,11 +317,15 @@ def visualise_results(im, imblur, imdeblurfista):
 
     plt.show()
 
+
 ## Load the image according to your option
 Wop, A, b, im, imblur = load_image_option_I()
 
 ## Run program you have coded:
-imdeblurfista = run_program(A,b, Wop)
+eps_value = 0.1
+baseline_iter = 1000
+my_iter = 100
+imdeblurfista = run_program(A,b, Wop, eps_value, baseline_iter, my_iter)
 
 ## Visualise your image results
 visualise_results(im, imblur, imdeblurfista)
