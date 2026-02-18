@@ -14,8 +14,8 @@ def load_image_option_I(bz=0.1, bx=0.3):
     nh = [15, 25]
     hz = np.exp(-bz * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
     hx = np.exp(-bx * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
-    hz /= np.trapz(hz)  # normalize the integral to 1
-    hx /= np.trapz(hx)  # normalize the integral to 1
+    hz /= np.trapezoid(hz)  # normalize the integral to 1
+    hx /= np.trapezoid(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 3))
@@ -51,8 +51,8 @@ def load_image_option_II(bz=0.1, bx=0.3):
     nh = [15, 25]
     hz = np.exp(bz * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
     hx = np.exp(bx * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
-    hz /= np.trapz(hz)  # normalize the integral to 1
-    hx /= np.trapz(hx)  # normalize the integral to 1
+    hz /= np.trapezoid(hz)  # normalize the integral to 1
+    hx /= np.trapezoid(hx)  # normalize the integral to 1
     h = hz[:, np.newaxis] * hx[np.newaxis, :]
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 3))
@@ -85,7 +85,8 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
 
-    # alpha = 1/((A.T@A).eigs(neigs = 1, symmetric = True)[0])
+    # L = np.abs((A.T@A).eigs(neigs = 1, symmetric = True)[0])
+    # alpha = 1.0 / (p*L)
 
     # if acceleration:
     #     print("Running FISTA...")
@@ -143,20 +144,17 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
 
     #     opt_gap_cost = cost - opt_cost
     
-    # --- DEBUT TIMER ---
     start_time = time.time()
-    # -------------------
 
     L = np.abs((A.T@A).eigs(neigs = 1, symmetric = True)[0])
-    alpha = 1.0 / p*L
+    alpha = 1.0 / (p*L)
 
     print(f"\nRunning {'FISTA' if acceleration else 'ISTA'}... alpha = {alpha}")
 
     x = np.zeros(A.shape[1])
     
-    # Pour FISTA
-    y = np.copy(x) # y_k (point d'inertie)
-    l = 0.0        # lambda_k (paramètre de Nesterov)
+    y = np.copy(x) # y_k
+    l = 0.0        # lambda_k
 
     cost = np.zeros(niter + 1)    
     cost[0] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
@@ -175,8 +173,7 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
         
         threshold = alpha*eps
         
-        # cette ligne remplace la boucle 'for'
-        # on calcule le prox du L1 de manière vectorisée avec le max qui correspond à la partie positive
+        # this lign replaces the 'for' loop
         y_next = np.sign(v) * np.maximum(np.abs(v) - threshold, 0)
         
         if acceleration:
@@ -197,20 +194,20 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
             print(f"Converged at iteration {k}")
             break
 
-    cost = cost[:k+2] # on coupe les zéros en trop
+    cost = cost[:k+2] # we cut the zeros at the end of the cost array for a cleaner plot
     
     # baseline comparaison
     opt_gap_cost = cost - opt_cost
 
-    # --- FIN TIMER ---
     end_time = time.time()
+
     algo_name = "FISTA" if acceleration else "ISTA"
     print(f"{algo_name} execution time: {end_time - start_time:.4f} seconds")
-    # -----------------
 
     return x, opt_gap_cost
 
 def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
+
     # print("Running Douglas-Rachford...")
     # z = np.zeros(A.shape[1])
     # x=np.zeros(A.shape[1])
@@ -218,7 +215,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
     # cost= np.zeros(niter + 1)
     # cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
     # grad_f = (A.T)@(A@x-b)
-    # while(k<niter and np.linalg.norm(grad_f)>eps):
+    # while(k<niter and np.linalg.norm(grad_f)>tol):
     #     for i in range(A.shape[1]):
     #         if z[i]>eps :
     #             x[i] = z[i] - eps
@@ -238,9 +235,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
 
     # opt_gap_cost = cost - opt_cost
 
-    # --- DEBUT TIMER ---
     start_time = time.time()
-    # -------------------
 
     print("\nRunning Douglas-Rachford...")
 
@@ -250,64 +245,41 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
     Op = (A.T @ A) + pylops.Identity(A.shape[1])
 
     cost = np.zeros(niter + 1)
-    cost[0] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
+    cost[0] = 0.5*(np.linalg.norm(A@x - b)**2) + eps*np.linalg.norm(x, 1)
 
-    # on garde en mémoire le 'y' précédent pour aider le solveur cg (warm start)
+    # we keep a guess for the solution of the linear system to speed up the convergence of the cg solver
     y_guess = np.zeros(A.shape[1])
     for k in range(niter):
-        x = np.sign(z) * np.maximum(np.abs(z) - eps, 0)
+        x = np.sign(z)*np.maximum(np.abs(z) - eps, 0)
 
-        rhs = A.T @ b + (2 * x - z)        
-        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=tol, maxiter=maxiter)
-        y_guess = y # on met à jour le guess pour le prochain solveur cg, ça peut aider à accélérer la convergence du solveur linéaire
+        rhs = A.T@b + (2*x - z)        
+        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-2, maxiter=maxiter)
+        y_guess = y # update the guess for the next iteration
         z = z + y - x
         cost[k+1] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
 
     # baseline comparaison
     opt_gap_cost = cost - opt_cost
 
-    # --- FIN TIMER ---
     end_time = time.time()
     print(f"Douglas-Rachford execution time: {end_time - start_time:.4f} seconds\n")
-    # -----------------
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter=100, maxiter_DR=1000, p=1):
+def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter=100, maxiter_DR=1000, p=1, bz=0.1, bx=0.3):
     
-    print(f"\nParameters: \nblurring parameters (bz, bx) = ({bz}, {bx})\neps = {eps_value} \ntol = {tol} \nbaseline_iter = {baseline_iter} \nmy_iter = {my_iter} \nmaxiter_DR = {maxiter_DR} \nalpha = 1/({p}*L)")
+    print(f"  -> Params: eps={eps_value}, p={p}, blur=({bz}, {bx})")
 
-    # name of the file where we will save the baseline cost, with eps_value in the name to avoid errors if you change epsilon
-    filename = f"opt_cost_baseline_eps{eps_value}_iter{baseline_iter}.npy"
-    
+    filename = f"{OUTPUT_DIR}/opt_cost_baseline_eps{eps_value:.0e}_iter{baseline_iter}_bz{bz}_bx{bx}.npy"    
     if os.path.exists(filename):
-        print(f"\nLoading opt_cost from file {filename}...")
         opt_cost = np.load(filename)
-        cost_history = [] 
     else:
-        print(f"\nFile {filename} not found.")
-        print("Running baseline FISTA from pylops (this may take time)...")
-        
-        # Baseline from pylops
+        print("     Calculating baseline...")
         imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
             A, b, eps=eps_value, niter=baseline_iter)
         opt_cost = cost_history[-1]
         
-        # save the baseline cost
         np.save(filename, opt_cost)
-        print(f"Saved opt_cost in {filename}")
-
-    # print("\nRunning baseline FISTA from pylops...")
-    # start_time = time.time()
-
-    # # Baseline from pylops
-    # imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
-    #     A, b, eps=eps_value, niter=baseline_iter)
-    
-    # end_time = time.time()
-    # print(f"Baseline FISTA execution time: {end_time - start_time:.4f} seconds\n")
-
-    # opt_cost = cost_history[-1]
 
     # ISTA
     my_imdeblurfista, opt_gap_cost = my_fista(
@@ -321,6 +293,7 @@ def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter
     my_imdeblurfista2, opt_gap_cost2 = douglas_rachford_alg(
         A, b, opt_cost, eps=eps_value, niter=my_iter, tol=tol, maxiter=maxiter_DR)
 
+    plt.figure(figsize=(10, 6))
     plt.loglog(opt_gap_cost, 'C0', label='ISTA')
     plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
     plt.loglog(opt_gap_cost2, 'C2', label='Douglas Rachford')
@@ -331,7 +304,7 @@ def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol=1e-10, my_iter
 
     plt.xlabel("Number of iterations")
     plt.ylabel("Optimality gap: F - F*")
-    plt.title("Convergence rates comparison")
+    plt.title(f"Convergence: eps={eps_value}, alpha=1/({p}*L), blur=({bz},{bx})")
 
     plt.legend()
     plt.show()
@@ -378,18 +351,23 @@ def visualise_results(im, imblur, imdeblurfista, imdeblurDR):
 ## Load the image according to your option : I for the dog, II for the castle
 bz = 0.1 # blurring parameter in the vertical direction (default is 0.1)
 bx = 0.3 # blurring parameter in the horizontal direction (default is 0.3)
-
 Wop, A, b, im, imblur = load_image_option_I(bz, bx)
 
 ## Run program you have coded:
-eps_value = 1e-1
-baseline_iter = 10000
+eps_value = 1e-4
+baseline_iter = 5000
 tol = 1e-20
-my_iter = 10
-maxiter_DR = 1000
+my_iter = 5000
+maxiter_DR = 100
 p=1
 
+start_global = time.time()
+
 imdeblurfista, imdeblurDR = run_program(A, b, Wop, eps_value, baseline_iter, tol, my_iter, maxiter_DR, p)
+
+end_global = time.time()
+print(f"\nAll done in {end_global - start_global:.2f} seconds.")
+print(f"Results are available in the folder: {OUTPUT_DIR}")
 
 ## Visualise your image results
 visualise_results(im, imblur, imdeblurfista, imdeblurDR)
