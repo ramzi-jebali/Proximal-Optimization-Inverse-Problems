@@ -253,7 +253,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
         x = np.sign(z)*np.maximum(np.abs(z) - eps, 0)
 
         rhs = A.T@b + (2*x - z)        
-        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-2, maxiter=maxiter)
+        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-10, maxiter=maxiter)
         y_guess = y # update the guess for the next iteration
         z = z + y - x
         cost[k+1] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
@@ -262,7 +262,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
     opt_gap_cost = cost - opt_cost
 
     end_time = time.time()
-    print(f"Douglas-Rachford execution time: {end_time - start_time:.4f} seconds\n")
+    print(f"Douglas-Rachford execution time: {end_time - start_time:.4f} seconds")
 
     return x, opt_gap_cost
 
@@ -354,11 +354,11 @@ bx = 0.3 # blurring parameter in the horizontal direction (default is 0.3)
 Wop, A, b, im, imblur = load_image_option_I(bz, bx)
 
 ## Run program you have coded:
-eps_value = 1e-4
+eps_value = 1e-1
 baseline_iter = 5000
 tol = 1e-20
 my_iter = 5000
-maxiter_DR = 100
+maxiter_DR = 1000
 p=1
 
 start_global = time.time()
@@ -367,7 +367,7 @@ imdeblurfista, imdeblurDR = run_program(A, b, Wop, eps_value, baseline_iter, tol
 
 end_global = time.time()
 
-print(f"\nDone in {end_global - start_global:.2f} seconds.")
+print(f"\nDone in {end_global - start_global:.2f} seconds.\n")
 
 ## Visualise your image results
 visualise_results(im, imblur, imdeblurfista, imdeblurDR)

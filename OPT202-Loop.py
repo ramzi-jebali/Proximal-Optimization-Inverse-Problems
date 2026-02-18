@@ -5,22 +5,6 @@ import scipy.sparse.linalg
 import time
 import os
 
-OUTPUT_DIR = "results_project"
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
-
-# Fichier de log pour les temps d'exécution
-LOG_FILE = os.path.join(OUTPUT_DIR, "execution_log.txt")
-
-# Initialisation du fichier log avec une entête
-with open(LOG_FILE, "w") as f:
-    f.write("blur_z,blur_x,epsilon,p,time_ista,time_fista,time_dr\n")
-
-def log_execution_time(bz, bx, eps, p, t_ista, t_fista, t_dr):
-    """Enregistre les temps d'exécution dans le fichier log."""
-    with open(LOG_FILE, "a") as f:
-        f.write(f"{bz},{bx},{eps},{p},{t_ista:.5f},{t_fista:.5f},{t_dr:.5f}\n")
-
 def load_image_option_I(bz=0.1, bx=0.3):
     sampling = 5
     im = np.load("dog_rgb.npy")[::sampling, ::sampling, 2]
@@ -176,7 +160,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
         x = np.sign(z) * np.maximum(np.abs(z) - eps, 0)
 
         rhs = A.T @ b + (2 * x - z)        
-        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-2, maxiter=maxiter)
+        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-10, maxiter=maxiter)
         y_guess = y # on met à jour le guess pour le prochain solveur cg, ça peut aider à accélérer la convergence du solveur linéaire
         z = z + y - x
         cost[k+1] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
@@ -273,7 +257,24 @@ def visualise_and_save(im, imblur, imdeblurfista, imdeblurDR, eps, p, bz, bx):
     plt.savefig(fig_name)
     plt.close()
 
-# ==========================================
+
+# create output directory if it doesn't exist
+OUTPUT_DIR = "results_project"
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+# log file to keep track of execution times for each configuration
+LOG_FILE = os.path.join(OUTPUT_DIR, "execution_log.txt")
+
+# initialize log file with headers
+with open(LOG_FILE, "w") as f:
+    f.write("blur_z,blur_x,epsilon,p,time_ista,time_fista,time_dr\n")
+
+
+def log_execution_time(bz, bx, eps, p, t_ista, t_fista, t_dr):
+    """Save execution times for each configuration to a log file."""
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{bz},{bx},{eps},{p},{t_ista:.5f},{t_fista:.5f},{t_dr:.5f}\n")
 
 baseline_iter = 5000
 tol = 1e-20
