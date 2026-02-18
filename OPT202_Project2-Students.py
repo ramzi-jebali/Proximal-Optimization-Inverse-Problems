@@ -202,7 +202,7 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
 
     return x, opt_gap_cost
 
-def douglas_rashford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
+def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
     # print("Running Douglas-Rachford...")
     # z = np.zeros(A.shape[1])
     # x=np.zeros(A.shape[1])
@@ -258,7 +258,7 @@ def douglas_rashford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
 
     return x, opt_gap_cost
 
-def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
+def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, tol_ISTA=1e-10, tol_DR=1e-10, my_iter=100, maxiter_DR=1000):
     
     # Baseline from pylops
     imdeblurfista0, n_eff_iter, cost_history = pylops.optimization.sparsity.fista(
@@ -269,17 +269,20 @@ def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
 
     # ISTA
     my_imdeblurfista, opt_gap_cost = my_fista(
-        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=False)
+        A, b, opt_cost, eps=eps_value, niter=my_iter, tol=tol_ISTA, acceleration=False)
 
     # FISTA
     my_imdeblurfista1, opt_gap_cost1 = my_fista(
-        A, b, opt_cost, eps=eps_value, niter=my_iter, acceleration=True)
+        A, b, opt_cost, eps=eps_value, niter=my_iter, tol=tol_ISTA, acceleration=True)
 
-    #my_imdeblurfista1, opt_gap_cost1 = douglas_rashford_alg(A, b, opt_cost, eps=eps_value, niter=my_iter, tol=1e-5, maxiter = 1000)
+    # Douglas-Rachford
+    my_imdeblurfista2, opt_gap_cost2 = douglas_rachford_alg(
+        A, b, opt_cost, eps=eps_value, niter=my_iter, tol=tol_DR, maxiter=maxiter_DR)
 
     plt.loglog(opt_gap_cost, 'C0', label='ISTA')
     plt.loglog(opt_gap_cost1, 'C1', label='FISTA')
-    #plt.loglog(opt_gap_cost1, 'C1', label='douglas rashford')
+    plt.loglog(opt_gap_cost2, 'C2', label='Douglas Rachford')
+
     plt.grid()
     plt.loglog([3, 30], [1e6, 1e5], 'C0--', label='1/k')
     plt.loglog([3, 30], [.5e5, .5e3], 'C1--', label='1/k2')
@@ -290,9 +293,12 @@ def run_program(A, b, Wop, eps_value=0.1, baseline_iter=1000, my_iter=100):
     imdeblurfista = my_imdeblurfista1.reshape(A.dims)
     imdeblurfista = Wop.H * imdeblurfista
 
-    return imdeblurfista
+    imdeblurDR = my_imdeblurfista2.reshape(A.dims)
+    imdeblurDR = Wop.H * imdeblurDR
 
-def visualise_results(im, imblur, imdeblurfista):
+    return imdeblurfista, imdeblurDR
+
+def visualise_results(im, imblur, imdeblurfista, imdeblurDR):
     #Change viridis into gray for castle image.
 
     fig = plt.figure(figsize=(12, 6))
@@ -300,6 +306,7 @@ def visualise_results(im, imblur, imdeblurfista):
     ax1 = plt.subplot2grid((2, 5), (0, 0))
     ax2 = plt.subplot2grid((2, 5), (0, 1))
     ax3 = plt.subplot2grid((2, 5), (0, 2))
+    ax4 = plt.subplot2grid((2, 5), (0, 3))
 
     ax1.imshow(im, cmap="viridis", vmin=0, vmax=250)
     ax1.axis("tight")
@@ -312,6 +319,10 @@ def visualise_results(im, imblur, imdeblurfista):
     ax3.axis("tight")
     ax3.set_title("FISTA deblurred")
 
+    ax4.imshow(imdeblurDR, cmap="viridis", vmin=0, vmax=250)
+    ax4.axis("tight")
+    ax4.set_title("Douglas-Rachford deblurred")
+
     plt.tight_layout()
     plt.subplots_adjust(top=0.8)
 
@@ -323,9 +334,12 @@ Wop, A, b, im, imblur = load_image_option_I()
 
 ## Run program you have coded:
 eps_value = 0.1
-baseline_iter = 1000
+baseline_iter = 100
+tol_ISTA = 1e-10
+tol_DR = 1e-10
 my_iter = 100
-imdeblurfista = run_program(A,b, Wop, eps_value, baseline_iter, my_iter)
+maxiter_DR = 1000
+imdeblurfista = run_program(A, b, Wop, eps_value, baseline_iter, tol_ISTA, tol_DR, my_iter, maxiter_DR)
 
 ## Visualise your image results
 visualise_results(im, imblur, imdeblurfista)
