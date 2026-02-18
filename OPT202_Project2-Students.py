@@ -247,7 +247,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
         # threshold est 'eps' car pas de step size alpha
 
         rhs = A.T @ b + (2 * x - z)        
-        y, info = scipy.sparse.linalg.cg(Op, rhs, tol=tol, maxiter=maxiter)
+        y, info = scipy.sparse.linalg.cg(Op, rhs, rtol=tol, maxiter=maxiter)
         z = z + y - x
         cost[k+1] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
 
