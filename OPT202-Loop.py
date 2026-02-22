@@ -282,9 +282,9 @@ my_iter = 5000
 maxiter_DR = 1000
 
 # variable parameters 
-blur_values = [(0.01, 0.03), (0.1, 0.3), (1.0, 3.0)]
-eps_values = [1e-4, 1e-8, 1e-12, 1e-16]
-p_values = [1, 2, 4, 8, 12, 20]
+blur_values = [(0.1, 0.3), (1.0, 3.0)]
+eps_values = [1e-4, 1e-8, 1e-12]
+p_values = [1, 2, 4, 8, 12]
 
 total_steps = len(blur_values) * len(eps_values) * len(p_values)
 current_step = 0
