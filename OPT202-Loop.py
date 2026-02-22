@@ -143,7 +143,7 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
     exec_time = time.time() - start_time # End Timer
     return x, opt_gap_cost, exec_time
 
-def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
+def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 100):
     start_time = time.time() # Start Timer
 
     z = np.zeros(A.shape[1])
@@ -160,7 +160,7 @@ def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, max
         x = np.sign(z) * np.maximum(np.abs(z) - eps, 0)
 
         rhs = A.T @ b + (2 * x - z)        
-        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=1e-10, maxiter=maxiter)
+        y, info = scipy.sparse.linalg.cg(Op, rhs, x0=y_guess, rtol=tol, maxiter=maxiter)
         y_guess = y # on met à jour le guess pour le prochain solveur cg, ça peut aider à accélérer la convergence du solveur linéaire
         z = z + y - x
         cost[k+1] = 0.5 * (np.linalg.norm(A @ x - b)**2) + eps * np.linalg.norm(x, 1)
@@ -175,7 +175,7 @@ def run_program(A, b, Wop, eps_value, baseline_iter, tol, my_iter, maxiter_DR, p
     
     print(f"  -> Params: eps={eps_value}, p={p}, blur=({bz}, {bx})")
 
-    filename = f"{OUTPUT_DIR}/opt_cost_baseline_eps{eps_value:.0e}_iter{baseline_iter}_bz{bz}_bx{bx}.npy"
+    filename = f"baseline_opt_costs/opt_cost_baseline_eps{eps_value:.0e}_iter{baseline_iter}_bz{bz}_bx{bx}.npy"
     
     if os.path.exists(filename):
         opt_cost = np.load(filename)
@@ -277,9 +277,9 @@ def log_execution_time(bz, bx, eps, p, t_ista, t_fista, t_dr):
         f.write(f"{bz},{bx},{eps},{p},{t_ista:.5f},{t_fista:.5f},{t_dr:.5f}\n")
 
 baseline_iter = 5000
-tol = 1e-20
+tol = 1e-10
 my_iter = 5000 
-maxiter_DR = 10
+maxiter_DR = 1000
 
 # variable parameters 
 blur_values = [(0.01, 0.03), (0.1, 0.3), (1.0, 3.0)]

@@ -206,7 +206,7 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
 
     return x, opt_gap_cost
 
-def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, maxiter = 1000):
+def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-5, maxiter = 100):
 
     # print("Running Douglas-Rachford...")
     # z = np.zeros(A.shape[1])
@@ -358,7 +358,7 @@ eps_value = 1e-1
 baseline_iter = 5000
 tol = 1e-20
 my_iter = 5000
-maxiter_DR = 1000
+maxiter_DR = 50
 p=1
 
 start_global = time.time()
