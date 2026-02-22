@@ -1,0 +1,186 @@
+\documentclass[a4paper,11pt]{article}
+
+% --- Packages requis ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref} % Il est recommandé de toujours charger hyperref en dernier
+
+% --- Configuration de la mise en page ---
+\geometry{hmargin=2.5cm, vmargin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+% --- Commandes personnalisées pour les notations ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\| #1 \right\|}
+\newcommand{\prox}{\text{prox}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% --- Titre ---
+\title{\textbf{Numerical Project in Python n.1: Image Deblurring}\\
+\large 4OPT2 - Continuous Optimisation}
+\author{Nathanaël SEROPIAN \and Ramzi JEBALI}
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduction}
+The goal of this project is to code a forward-backward method with Nesterov's acceleration (FISTA) to solve an image deblurring problem using $l_1$ regularization.
+
+\section{The Problem to Solve}
+
+We consider the following optimization problem:
+\begin{equation}
+    \min_{x \in \R^n} F(x) := \underbrace{\frac{1}{2} \norm{CW^H x - b}_2^2}_{f_1(x)} + \underbrace{\epsilon \norm{x}_1}_{f_2(x)}
+    \label{eq:prob}
+\end{equation}
+where:
+\begin{itemize}
+    \item $b \in \R^m$ is the observed (blurred and noisy) image.
+    \item $C$ is the blurring operator (convolution).
+    \item $W^H$ is the inverse wavelet transform (synthesis operator).
+    \item $x$ represents the wavelet coefficients of the image.
+    \item We denote $A = CW^H$.
+\end{itemize}
+
+We define the Forward-Backward algorithm (or Proximal Gradient Method) as:
+\begin{equation}
+    x_{k+1} = \prox_{\alpha f_2} \left( x_k - \alpha \nabla f_1(x_k) \right)
+\end{equation}
+where $\alpha > 0$ is the step size.
+
+\newpage
+
+\section{Theoretical Part}
+
+% --- Question 1 ---
+\subsection*{Question 1: Convexity and Smoothness}
+
+The objective function $F$ is the sum of two functions:
+\begin{itemize}
+    \item $f_1(x) = \frac{1}{2} \|Ax - b\|_2^2$. Its Hessian is $\nabla^2 f_1(x) = A^T A$ which is positive semi-definite. Thus, $f_1$ is convex.
+    \item $f_2(x) = \epsilon \|x\|_1$. This is a norm (multiplied by $\epsilon > 0$). By definition, all norms are convex functions.
+\end{itemize}
+Since the sum of two convex functions is convex, $F$ is convex. As we minimize a convex function over a convex set, the problem is convex.
+
+$$0 \preceq \nabla^2 f_1(x) = A^T A \preceq \sigma_{\max}^2(A)$$ so $f_1 \in \mathcal{C}_{L}^{1,1}$
+
+Thus, as $f_1$ is convex, $f_1 \in \mathcal{S}_{0,L}^{1,1}$ with the Lipschitz constant:
+$L = \sigma_{\max}^2(A) = \lambda_{\max}(A^T A)$
+
+% --- Question 2 ---
+\subsection*{Question 2: ISTA Formulation}
+
+We want to solve $\min_x f_1(x) + f_2(x)$, with $f_1(x) = \frac{1}{2}\|Ax-b\|_2^2$ and $f_2(x) = \epsilon\|x\|_1$.
+The proximal gradient method reads:
+\begin{equation}
+    x_{k+1} = \text{prox}_{\alpha f_2}(x_k - \alpha \nabla f_1(x_k)) = \arg\min_{z \in \mathbb{R}^n} \left( \alpha \epsilon \|z\|_1 + \frac{1}{2} \|z - (x_k - \alpha \nabla f_1(x_k))\|_2^2 \right).
+\end{equation}
+
+First, we compute the gradient of the smooth part:
+\begin{equation}
+    \nabla f_1(x_k) = A^T(Ax_k - b).
+\end{equation}
+
+Solving the proximal step calling $v_k = x_k - \alpha \nabla f_1(x_k)$, the problem becomes:
+\begin{equation}
+    \arg\min_{z \in \mathbb{R}^n} \left( \alpha \epsilon \|z\|_1 + \frac{1}{2} \|z - v_k\|_2^2 \right) \implies \alpha \epsilon \partial \|z\|_1 + (z - v_k) \ni 0.
+\end{equation}
+
+The last set of equations reads, for all components $i$:
+\begin{equation}
+    \alpha \epsilon \partial |[z]_i| + [z]_i \ni [v_k]_i.
+\end{equation}
+
+We have now several possibilities, recalling that $\partial |[z]_i|$ depends on the sign of $[z]_i$:
+\begin{align}
+    [z]_i > 0 &\implies [z]_i = [v_k]_i - \alpha \epsilon \quad (\text{which is valid then for } [v_k]_i > \alpha \epsilon) \\
+    [z]_i < 0 &\implies [z]_i = [v_k]_i + \alpha \epsilon \quad (\text{which is valid then for } [v_k]_i < -\alpha \epsilon) \\
+    [z]_i = 0 &\implies \partial |[z]_i| \in [-1, 1] \text{ and } [v_k]_i \in [-\alpha \epsilon, \alpha \epsilon].
+\end{align}
+
+Reversing, we find the next iterate $[x_{k+1}]_i = [z^*]_i$:
+\begin{equation}
+    [x_{k+1}]_i = 
+    \begin{cases} 
+      [v_k]_i - \alpha \epsilon & \text{for } [v_k]_i > \alpha \epsilon \\
+      [v_k]_i + \alpha \epsilon & \text{for } [v_k]_i < -\alpha \epsilon \\
+      0 & \text{otherwise}
+   \end{cases}
+\end{equation}
+
+and compactifying using the positive part operator $(\cdot)_+ = \max(\cdot, 0)$:
+\begin{equation}
+    [x_{k+1}]_i = \text{sign}([v_k]_i)\left(|[v_k]_i| - \alpha \epsilon\right)_+.
+\end{equation}
+This demonstrates that the proximal gradient applied to the $\ell_1$ regularized problem yields the exact Iterative Soft-Thresholding Algorithm (ISTA) iterations provided in Equation (1).
+
+\subsection*{Question 3: Implementation and Convergence}
+
+We implemented both ISTA and FISTA in Python. To optimize performance, the soft-thresholding operator was fully vectorized using NumPy functions, completely avoiding \texttt{for} loops. 
+As theoretically expected, ISTA exhibits a slow, monotonic convergence characteristic of its $\mathcal{O}(1/k)$ rate. Conversely, thanks to Nesterov's acceleration, FISTA demonstrates a much faster convergence rate of $\mathcal{O}(1/k^2)$.
+
+\subsection*{Question 4: Experimenting with $\epsilon$}
+
+The parameter $\epsilon$ controls the weight of the $\ell_1$ sparsity regularization.
+
+When $\epsilon$ is large (e.g., $10^{-4}$), the algorithm aggressively forces many wavelet coefficients to zero. Visually, this produces a heavily smoothed image, effectively eliminating noise but also destroying fine details, which can result in a "blocky" or painted effect. Convergence is generally faster due to the restricted effective search space. 
+Conversely, for very small values (e.g., $10^{-12}$), the $\ell_1$ penalty becomes negligible, and the problem acts almost like pure least-squares. While textures are better preserved, the ill-conditioned nature of the blur operator introduces severe numerical artifacts and noise amplification.
+
+\subsection*{Question 5: Experimenting with Step Sizes ($\alpha$)} 
+
+We investigated the step size by setting $\alpha = \frac{1}{p L}$ and varying $p$.
+For $p = 1$, the step size is maximal and theoretically optimal, leading to the fastest, most fluid convergence for both algorithms. 
+When $p > 1$ (e.g., $p = 8$), the step size is artificially reduced. For ISTA, this simply slows down the convergence slope. For FISTA, however, reducing the step size introduces significant "ripples" or oscillations in the convergence curve. This happens because the momentum accumulates too much inertia relative to the small gradient steps, causing the algorithm to repeatedly overshoot the optimal trajectory and correct itself.
+
+\subsection*{Question 6: Experimenting with Blurring Parameters}
+
+The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
+With weak blur ($bz=0.01, bx=0.03$), the operator $A$ is close to the identity matrix. The problem is well-conditioned, and algorithms recover the original image rapidly with few iterations.
+With strong blur ($bz=1.0, bx=3.0$), the kernel acts as an aggressive low-pass filter, erasing high frequencies. The matrix $A^TA$ becomes highly ill-conditioned, possessing many eigenvalues near zero. Consequently, the reconstructed image lacks sharpness. Interestingly, we observed that the inner Conjugate Gradient (CG) solver used for Douglas-Rachford converges faster per iteration under strong blur, likely because the extreme smoothing artificially regularizes the local spectral properties of the linear system.
+
+\subsection*{Question 7: Impact of the Sampling Parameter}
+
+Decreasing the sampling parameter (e.g., from 5 to 3 for the dog image) preserves a higher resolution of the original image. The total number of pixels $n$ scales proportionally to $1/\text{sampling}^2$. Changing the sampling from 5 to 3 multiplies the problem dimension $n$ by approximately $(5/3)^2 \approx 2.77$.
+Since the computational bottleneck in ISTA and FISTA lies in the application of the 2D Convolutions and Discrete Wavelet Transforms (which run in $\mathcal{O}(n \log n)$ time), the execution time per iteration scales almost linearly with the number of pixels. Consequently, processing higher-resolution images requires significantly more computational time, emphasizing the need for accelerated schemes like FISTA.
+
+\subsection*{Question 8: Douglas-Rachford Splitting (Option I)}
+
+The Douglas-Rachford (DR) splitting algorithm aims to solve $\min_x f(x) + g(x)$. As stated in the assignment, we consider the formulation without an explicit step size. We assign the proximal-friendly $\ell_1$ penalty to $g(x) = \epsilon\|x\|_1$, and the least-squares data fidelity term to $f(x) = \frac{1}{2}\|Ax-b\|_2^2$.
+
+The DR iterations are defined as:
+\begin{align}
+    x_{k+1} &= \text{prox}_{g}(z_k) \\
+    y_{k+1} &= \text{prox}_{f}(2x_{k+1} - z_k) \label{eq:proxf} \\
+    z_{k+1} &= z_k + y_{k+1} - x_{k+1}
+\end{align}
+
+The first step is simply the soft-thresholding operator evaluated at $z_k$ with threshold $\epsilon$. 
+To compute the second step (Eq. \ref{eq:proxf}), let $v = 2x_{k+1} - z_k$. The proximal operator of $f$ evaluated at $v$ is:
+\begin{equation}
+    y_{k+1} = \arg\min_y \left( \frac{1}{2}\|Ay - b\|_2^2 + \frac{1}{2}\|y - v\|_2^2 \right).
+\end{equation}
+
+By taking the gradient of this objective function with respect to $y$ and setting it to zero, we obtain the optimality condition:
+\begin{equation}
+    A^T(Ay - b) + (y - v) = 0.
+\end{equation}
+
+Rearranging the terms to isolate $y$ yields the following linear system:
+\begin{equation}
+    (I + A^TA) y = v + A^Tb.
+\end{equation}
+
+Because the operator $A$ involves large 2D convolutions and wavelet transforms, explicitly constructing and inverting the dense matrix $(I + A^TA)$ is computationally prohibitive. 
+To circumvent this issue, we solve the linear system iteratively using the Conjugate Gradient (CG) method (\texttt{scipy.sparse.linalg.cg}) provided by the SciPy library. To ensure fast execution, we employ a "warm start" strategy, using the solution $y$ from the previous iteration $k$ as the initial guess ($x_0$) for the CG solver at iteration $k+1$.
+
+\end{document}
