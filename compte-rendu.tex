@@ -131,11 +131,20 @@ As theoretically expected, ISTA exhibits a slow, monotonic convergence character
 
 \subsection*{Question 4: Experimenting with $\epsilon$}
 
-The parameter $\epsilon$ controls the weight of the $\ell_1$ sparsity regularization.
+% The parameter $\epsilon$ controls the weight of the $\ell_1$ sparsity regularization.
 
-When $\epsilon$ is large (e.g., $10^{-4}$), the algorithm aggressively forces many wavelet coefficients to zero. Visually, this produces a heavily smoothed image, effectively eliminating noise but also destroying fine details, which can result in a "blocky" or painted effect. Convergence is generally faster due to the restricted effective search space. 
-Conversely, for very small values (e.g., $10^{-12}$), the $\ell_1$ penalty becomes negligible, and the problem acts almost like pure least-squares. While textures are better preserved, the ill-conditioned nature of the blur operator introduces severe numerical artifacts and noise amplification.
+% When $\epsilon$ is large (e.g., $10^{-4}$), the algorithm aggressively forces many wavelet coefficients to zero. Visually, this produces a heavily smoothed image, effectively eliminating noise but also destroying fine details, which can result in a "blocky" or painted effect. Convergence is generally faster due to the restricted effective search space. 
+% Conversely, for very small values (e.g., $10^{-12}$), the $\ell_1$ penalty becomes negligible, and the problem acts almost like pure least-squares. While textures are better preserved, the ill-conditioned nature of the blur operator introduces severe numerical artifacts and noise amplification.
 
+\paragraph{Impact of $\varepsilon$.}
+The parameter $\varepsilon$ controls the strength of the $\ell_1$ regularization term and therefore the sparsity of the solution. 
+To interpret the role of $\varepsilon$, we rely on the ISTA solution formula established previously. Componentwise, the solution is given by the soft-thresholding operator
+\begin{equation}
+    [x_{k+1}]_i = \text{sign}([v_k]_i)\left(|[v_k]_i| - \alpha \epsilon\right)_+
+\end{equation}
+where $\alpha$  is the step size  and can be for example $\alpha = \frac{1}{L}$ where $L$ is the largest singular value of $A$, 
+
+Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective threshold is $\alpha\varepsilon$. Increasing $\varepsilon$ therefore increases the threshold, so more coefficients are set exactly to zero, small-amplitude variations in the pixels are removed, and fine details are suppressed, leading to a smoother reconstruction. At the same time, the stronger regularization improves conditioning and numerical stability, typically accelerating convergence. Conversely, decreasing $\varepsilon$ lowers the threshold, fewer coefficients are annihilated, and more local variations (hence more details) are preserved; however, the problem then approaches the ill-conditioned least-squares inversion, making the reconstruction more sensitive to noise and generally increasing the number of iterations required for convergence.
 \subsection*{Question 5: Experimenting with Step Sizes ($\alpha$)} 
 
 We investigated the step size by setting $\alpha = \frac{1}{p L}$ and varying $p$.
