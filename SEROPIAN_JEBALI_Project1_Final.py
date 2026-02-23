@@ -84,65 +84,6 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
     """ Here you can code your ISTA and FISTA algorithm
         Return: optimal x, and opt_gap_cost (history of cost-optcost)
     """
-
-    # L = np.abs((A.T@A).eigs(neigs = 1, symmetric = True)[0])
-    # alpha = 1.0 / (p*L)
-
-    # if acceleration:
-    #     print("Running FISTA...")
-    #     l = 0
-    #     gamma = 2*(1-l)/(1+np.sqrt(1+4*l**2))
-    #     l = (1+np.sqrt(1+4*l**2))/2
-    #     x = np.zeros(A.shape[1]) 
-    #     grad_f = (A.T)@(A@x-b)
-    #     v = x - alpha*grad_f
-    #     k=0
-    #     y = np.zeros(A.shape[1])
-    #     cost= np.zeros(niter + 1)
-    #     cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
-    #     while(np.linalg.norm(grad_f) > tol and k<niter):
-    #         x=gamma*y
-    #         for i in range(A.shape[1]):     
-    #             if v[i]>eps :
-    #                 y[i] = v[i] - alpha*eps
-    #             if v[i]<-eps :
-    #                 y[i] = v[i] + alpha*eps
-    #             if v[i] >= -eps and v[i] <= eps:
-    #                 y[i] = 0
-    #         x+=(1-gamma)*y 
-    #         gamma = 2*(1-l)/(1+np.sqrt(1+4*l**2))
-    #         l = (1+np.sqrt(1+4*l**2))/2 
-    #         grad_f = A.T@(A@x-b)
-    #         v = x - alpha*grad_f
-    #         k+=1
-    #         cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
-
-    #     opt_gap_cost = cost - opt_cost
-
-    # else :
-    #     print("Running ISTA...")
-
-    #     x = np.zeros(A.shape[1]) 
-    #     grad_f = (A.T)@(A@x-b)
-    #     v = x - alpha*grad_f
-    #     k=0
-    #     cost= np.zeros(niter + 1)
-    #     cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
-
-    #     while(np.linalg.norm(grad_f) > tol and k<niter):
-    #         for i in range(A.shape[1]):
-    #             if v[i] > alpha*eps :
-    #                 x[i] = v[i] - alpha*eps
-    #             if v[i] < -alpha*eps :
-    #                 x[i] = v[i] + alpha*eps
-    #             if v[i] >= -alpha*eps and v[i] <= alpha*eps:
-    #                 x[i] = 0
-    #         grad_f = A.T@(A@x-b)
-    #         v = x - alpha*grad_f
-    #         k+=1
-    #         cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1)  
-
-    #     opt_gap_cost = cost - opt_cost
     
     start_time = time.time()
 
@@ -207,33 +148,6 @@ def my_fista(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-10, acceleration=Fa
     return x, opt_gap_cost
 
 def douglas_rachford_alg(A, b, opt_cost, eps=10**(-1), niter=100, tol=1e-5, maxiter = 100):
-
-    # print("Running Douglas-Rachford...")
-    # z = np.zeros(A.shape[1])
-    # x=np.zeros(A.shape[1])
-    # k = 0
-    # cost= np.zeros(niter + 1)
-    # cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
-    # grad_f = (A.T)@(A@x-b)
-    # while(k<niter and np.linalg.norm(grad_f)>tol):
-    #     for i in range(A.shape[1]):
-    #         if z[i]>eps :
-    #             x[i] = z[i] - eps
-    #         if z[i]<-eps :
-    #             x[i] = z[i] + eps
-    #         if (z[i]<=eps and z[i]>=-eps):
-    #             x[i] = 0
-    #     first_member = (A.T)@A + pylops.Identity(A.shape[1])
-    #     second_member = (A.T)@b + 2*x-z
-    #     y,conv = scipy.sparse.linalg.cg(first_member, second_member,rtol = tol,maxiter = maxiter)
-    #     z = z + y -x
-    #     k+=1
-    #     cost[k] = 1/2*(np.linalg.norm(A@x-b)**2) + eps*np.linalg.norm(x,1) 
-
-    #     # on avait oublié de mettre à jour grad_f avec le nouveau x, sans ça le test du while n'a pas de sens car on teste grad_f mais il n'est jamais mis à jour dans la boucle
-    #     grad_f = (A.T) @ (A @ x - b)
-
-    # opt_gap_cost = cost - opt_cost
 
     start_time = time.time()
 
