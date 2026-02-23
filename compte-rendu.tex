@@ -291,4 +291,79 @@ To circumvent this issue, we solve the linear system iteratively using the Conju
 In practice, we observed that each Douglas–Rachford iteration is significantly more expensive than ISTA or FISTA, since it requires solving a linear system with Conjugate Gradient. However, the warm start strategy makes the inner CG solver converge in only a few iterations after the first steps. 
 
 Compared to FISTA, Douglas–Rachford appears more stable and less oscillatory in its behavior. Although it does not always reach the solution as quickly in terms of wall-clock time and iterations, its updates are often smoother and less sensitive to parameter tuning (there is not step size).
+
+
+% ===============
+% SECTION FIGURES 
+% ===============
+\newpage
+\section{Numerical Results and Visual Reconstructions}
+
+This section visually illustrates the theoretical points discussed in the report. For each specific configuration, we present the convergence curve alongside the resulting visual reconstruction.
+
+% Figure 1 : Base Case
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p2_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p2_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Base Configuration ($\epsilon=10^{-4}, p=2$, weak blur):} FISTA and Douglas-Rachford converge significantly faster than ISTA. The resulting image is successfully restored with well-preserved edges.}
+    \label{fig:base_case}
+\end{figure}
+
+% Figure 2 : Step size (p=8)
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p8_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p8_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Reduced Step Size ($p=8$):} Note the severe ``ripples'' in FISTA's convergence curve due to the momentum imbalance. The visual reconstruction may be slightly degraded compared to the base case due to slower overall convergence.}
+    \label{fig:step_size}
+\end{figure}
+
+\newpage
+
+% Figure 3 : Epsilon (très petit)
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-12_p2_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-12_p2_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Small Regularization ($\epsilon=10^{-12}$):} The lack of $\ell_1$ penalty reduces the problem to an ill-conditioned least-squares inversion. This amplifies numerical noise and creates visible wavy artifacts in the reconstructed image.}
+    \label{fig:epsilon}
+\end{figure}
+
+% Figure 4 : Strong blur
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz1.0_bx3.0.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz1.0_bx3.0.png}
+    \end{minipage}
+    \caption{\textbf{Strong Blur ($bz=1.0, bx=3.0$):} The heavily ill-conditioned operator $A$ slows down effective convergence. Much of the fine high-frequency detail is permanently lost during the physical blurring process, leading to a softer visual reconstruction despite optimal algorithmic convergence.}
+    \label{fig:blur}
+\end{figure}
+
+\end{document}
+
+
 \end{document}
