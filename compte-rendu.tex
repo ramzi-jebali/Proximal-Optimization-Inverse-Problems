@@ -176,19 +176,79 @@ Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective 
 %     Consequently, the momentum forces the iterate to slide way past the gradient point $y_{k+1}$, repeatedly overshooting the optimal minimum. The algorithm then realizes it went too far, tries to correct its trajectory, but overshoots again due to the inertia. This back-and-forth correction is exactly what creates the waves on the convergence graph before it finally stabilizes.
 % \end{itemize}
 
-We investigated the effect of the step size by setting $\alpha = \frac{1}{pL}$ with $p \ge 1$, where $L$ is the largest singular value of $A$. When $p=1$, the step size is maximal and ensures the fastest theoretical convergence rate ($\mathcal{O}(1/k)$ for ISTA and $\mathcal{O}(1/k^2)$ for FISTA). 
+% We investigated the effect of the step size by setting $\alpha = \frac{1}{pL}$ with $p \ge 1$, where $L$ is the largest singular value of $A$. When $p=1$, the step size is maximal and ensures the fastest theoretical convergence rate ($\mathcal{O}(1/k)$ for ISTA and $\mathcal{O}(1/k^2)$ for FISTA). 
 
-When $p>1$, the step size $\alpha$ is reduced. Although the theoretical minimizer remains unchanged as long as $\alpha \le 1/L$, the convergence becomes slower. 
+% When $p>1$, the step size $\alpha$ is reduced. Although the theoretical minimizer remains unchanged as long as $\alpha \le 1/L$, the convergence becomes slower. 
 
-In ISTA, a smaller $\alpha$ simply means smaller gradient steps at each iteration. The decrease of the objective remains smooth and monotonic, but more iterations are required to reach the same level of accuracy. Consequently, for a fixed number of iterations, a smaller $\alpha$ leads to a less accurate reconstruction and thus a poorer visual quality of the restored image.
+% In ISTA, a smaller $\alpha$ simply means smaller gradient steps at each iteration. The decrease of the objective remains smooth and monotonic, but more iterations are required to reach the same level of accuracy. Consequently, for a fixed number of iterations, a smaller $\alpha$ leads to a less accurate reconstruction and thus a poorer visual quality of the restored image.
 
-For FISTA, reducing $\alpha$ also slows down convergence, but it additionally amplifies oscillations in the objective curve. This comes from the acceleration mechanism: FISTA performs a gradient correction combined with an extrapolation step (momentum). When $\alpha$ is small, the gradient correction becomes weaker, while the extrapolation term remains active. As a result, the iterate may overshoot the minimum and then correct itself repeatedly, producing visible ripples in the convergence graph. Despite these oscillations, the method eventually stabilizes and keeps its accelerated convergence rate.
+% For FISTA, reducing $\alpha$ also slows down convergence, but it additionally amplifies oscillations in the objective curve. This comes from the acceleration mechanism: FISTA performs a gradient correction combined with an extrapolation step (momentum). When $\alpha$ is small, the gradient correction becomes weaker, while the extrapolation term remains active. As a result, the iterate may overshoot the minimum and then correct itself repeatedly, producing visible ripples in the convergence graph. Despite these oscillations, the method eventually stabilizes and keeps its accelerated convergence rate.
+% \paragraph{Influence of the step size $\alpha$.}
+We investigated the effect of the step size by setting $\alpha = \frac{1}{pL}$ with $p \ge 1$, where $L$ is the largest singular value of $A$. When $p=1$, the step size is maximal and ensures the fastest theoretical convergence rate ($\mathcal{O}(1/k)$ for ISTA and $\mathcal{O}(1/k^2)$ for FISTA$).$
+
+When $p>1$, the step size $\alpha$ is reduced. Although the theoretical minimizer is unchanged as long as $\alpha \le 1/L$, the convergence becomes slower.
+
+For ISTA, reducing $\alpha$ simply decreases the magnitude of the gradient step at each iteration. The objective function remains monotonically decreasing, but more iterations are required to reach the same precision. Therefore, for a fixed number of iterations, a smaller $\alpha$ results in a less accurate reconstruction and thus poorer visual quality.
+
+% For FISTA, the situation is more subtle. In addition to the gradient correction, FISTA includes an extrapolation (momentum) term based on the previous displacement. When $\alpha$ is reduced, the gradient correction $\alpha \nabla f$ becomes weaker, while the extrapolation term remains of comparable magnitude. The relative influence of the inertial term therefore increases, which may cause the iterates to overshoot the minimum and then correct themselves repeatedly. This produces visible oscillations (``ripples'') in the objective curve. The proximal operator (soft-thresholding) slightly contracts the iterates and thus plays a damping role, but it does not suppress the inertial mechanism responsible for these oscillations. Despite this non-monotonic behavior, FISTA eventually stabilizes and retains its accelerated convergence rate.
+
+For FISTA, the situation is more subtle. The update can be written in the form
+\[
+x_{k+1}
+=
+\operatorname{prox}_{\alpha\varepsilon}
+\Big(
+y_{k+1}
++
+\gamma_k (y_{k+1}-y_k)
+\Big),
+\]
+where $y_{k+1}=x_k-\alpha\nabla f(x_k)$ represents the gradient correction, and
+$\gamma_k (y_{k+1}-y_k)$ is the extrapolation (inertial) term. The first term drives the iterate toward the minimizer through the gradient step, while the second one pushes it further in the previous direction.
+
+When $\alpha$ is reduced, the gradient correction contained in $y_{k+1}$ becomes weaker, since it is proportional to $\alpha\nabla f(x_k)$. In contrast, the inertial coefficient $\gamma_k$ does not depend on $\alpha$ and continues to amplify the displacement $(y_{k+1}-y_k)$. As a result, the relative influence of the inertial term increases: the iterate may move too far past the minimizer before the gradient is able to compensate. The algorithm then corrects its trajectory, but the inertia may again push it in the opposite direction, producing the visible oscillations (“ripples”) observed in the objective curve.
+
+The proximal operator
+\[
+\operatorname{prox}_{\alpha\varepsilon}([v_k]_i)
+=
+[x_{k+1}]_i = \text{sign}([v_k]_i)\left(|[v_k]_i| - \alpha \epsilon\right)_+
+\]
+acts as a contraction by shrinking the coordinates and possibly setting small ones to zero. It therefore introduces a damping effect, which slightly attenuates the oscillations. However, it does not remove the inertial mechanism itself, so the non-monotonic behavior persists. Despite these oscillations, the method eventually stabilizes and retains its accelerated convergence rate.
+
+
+
+
 \subsection*{Question 6: Experimenting with Blurring Parameters}
 
-The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
-With weak blur ($bz=0.01, bx=0.03$), the operator $A$ is close to the identity matrix. The problem is well-conditioned, and algorithms recover the original image rapidly with few iterations.
-With strong blur ($bz=1.0, bx=3.0$), the kernel acts as an aggressive low-pass filter, erasing high frequencies. The matrix $A^TA$ becomes highly ill-conditioned, possessing many eigenvalues near zero. Consequently, the reconstructed image lacks sharpness. Interestingly, we observed that the inner Conjugate Gradient (CG) solver used for Douglas-Rachford converges faster per iteration under strong blur, likely because the extreme smoothing artificially regularizes the local spectral properties of the linear system.
+% The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
+% With weak blur ($bz=0.01, bx=0.03$), the operator $A$ is close to the identity matrix. The problem is well-conditioned, and algorithms recover the original image rapidly with few iterations.
+% With strong blur ($bz=1.0, bx=3.0$), the kernel acts as an aggressive low-pass filter, erasing high frequencies. The matrix $A^TA$ becomes highly ill-conditioned, possessing many eigenvalues near zero. Consequently, the reconstructed image lacks sharpness. Interestingly, we observed that the inner Conjugate Gradient (CG) solver used for Douglas-Rachford converges faster per iteration under strong blur, likely because the extreme smoothing artificially regularizes the local spectral properties of the linear system.
 
+% The parameters $bz$ and $bx$ control the variance of the Gaussian blur and therefore the conditioning of the operator $A$. 
+
+% With weak blur ($bz=1, bx=3$), the operator $A$ is close to the identity matrix. In that case, the singular values of $A$ remain well distributed and bounded away from zero, so the problem is well-conditioned. The landscape of the objective function
+% \[
+% f(x)=\tfrac12\|Ax-b\|^2
+% \]
+% is strongly curved in all directions, which allows the algorithms to converge rapidly. Since only limited information is lost in the blurring process, the reconstruction is also visually accurate.
+
+% With strong blur ($bz=0.01, bx=0.03$), the operator $A$ strongly attenuates fine-scale variations in the image. Spectrally, this means that many singular values of $A$ become very small, and the matrix $A^TA$ becomes ill-conditioned. As a consequence, certain directions of the optimization landscape become almost flat, slowing down the effective correction in those directions. More importantly, part of the original information has been severely attenuated during the blurring process. Since the reconstruction aims to recover $x$ such that $Ax$ matches the blurred image, any information that has been nearly suppressed by $A$ cannot be reliably recovered. The degradation of visual quality under strong blur is therefore not only a numerical issue, but also an intrinsic loss of information.
+
+
+The parameters $bz$ and $bx$ control the variance of the Gaussian blur and therefore the conditioning of the operator $A$. 
+
+With weak blur ($bz=1, bx=3$), the operator $A$ is close to the identity matrix. In that case, the singular values of $A$ remain well distributed and bounded away from zero, so the problem is well-conditioned. The objective function
+\[
+f(x)=\tfrac12\|Ax-b\|^2
+\]
+is well curved in all directions, which allows the algorithms to converge rapidly. Indeed, we can write $A^TA=V\Sigma^2V^T$, so for each singular direction $v_i$,
+\[
+A^TA v_i=\sigma_i^2 v_i,
+\]
+and the gradient $\nabla f(x)=A^T(Ax-b)$ scales that direction proportionally to $\sigma_i^2$. When the singular values are not too small, the gradient provides effective corrections in every direction. Since only limited information is lost during the blurring process, the reconstruction is visually accurate.
+
+With strong blur ($bz=0.01, bx=0.03$), the operator $A$ strongly attenuates fine-scale variations in the image. Many singular values of $A$ become very small, which makes $A^TA$ ill-conditioned. In the corresponding directions, the gradient corrections are weak (as they are proportional to $\sigma_i^2$), so the algorithms progress slowly along those components. More importantly, strong blur removes a significant part of the fine information from the image. Since the reconstruction seeks an image $x$ such that $Ax$ matches the blurred observation, any detail that has been almost suppressed by $A$ cannot be reliably recovered. The degradation of visual quality under strong blur is therefore not only a numerical issue, but also an intrinsic loss of information.
 \subsection*{Question 7: Impact of the Sampling Parameter}
 
 Decreasing the sampling parameter (e.g., from 5 to 3 for the dog image) preserves a higher resolution of the original image. The total number of pixels $n$ scales proportionally to $1/\text{sampling}^2$. Changing the sampling from 5 to 3 multiplies the problem dimension $n$ by approximately $(5/3)^2 \approx 2.77$.
