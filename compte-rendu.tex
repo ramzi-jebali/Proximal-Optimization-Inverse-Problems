@@ -10,7 +10,8 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{hyperref} % Il est recommandé de toujours charger hyperref en dernier
+\usepackage{float}
+\usepackage{hyperref}
 
 % --- Configuration de la mise en page ---
 \geometry{hmargin=1.5cm, vmargin=1.5cm}
@@ -126,10 +127,55 @@ This demonstrates that the proximal gradient applied to the $\ell_1$ regularized
 
 \subsection*{Question 3: Implementation and Convergence}
 
+% --- Figure pour la Question 3 ---
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p2_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p2_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Base Configuration ($\epsilon=10^{-4}, p=2$, weak blur):} FISTA and Douglas-Rachford converge significantly faster than ISTA. The image is successfully restored with well-preserved edges.}
+    \label{fig:base_case}
+\end{figure}
+
 We implemented both ISTA and FISTA in Python. To optimize performance, the soft-thresholding operator was fully vectorized using NumPy functions, completely avoiding \texttt{for} loops. 
 As theoretically expected, ISTA exhibits a slow, monotonic convergence characteristic of its $\mathcal{O}(1/k)$ rate. Conversely, thanks to Nesterov's acceleration, FISTA demonstrates a much faster convergence rate of $\mathcal{O}(1/k^2)$.
 
 \subsection*{Question 4: Experimenting with $\epsilon$}
+
+% --- Figures Comparison for Question 4 (\epsilon) ---
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Large Regularization ($\epsilon=10^{-4}$):} The algorithm effectively removes noise by enforcing sparsity in the wavelet domain, resulting in a smooth reconstruction but slightly attenuating fine details.}
+    \label{fig:eps_large}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-12_p1_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-12_p1_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Small Regularization ($\epsilon=10^{-12}$):} Reducing the $\ell_1$ penalty reduces the problem to an ill-conditioned least-squares inversion. This amplifies numerical noise and creates visible wavy artifacts in the reconstruction.}
+    \label{fig:eps_small}
+\end{figure}
 
 % The parameter $\epsilon$ controls the weight of the $\ell_1$ sparsity regularization.
 
@@ -145,7 +191,39 @@ To interpret the role of $\varepsilon$, we rely on the ISTA solution formula est
 where $\alpha$  is the step size  and can be for example $\alpha = \frac{1}{L}$ where $L$ is the largest singular value of $A$, 
 
 Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective threshold is $\alpha\varepsilon$. Increasing $\varepsilon$ therefore increases the threshold, so more coefficients are set exactly to zero, small-amplitude variations in the pixels are removed, and fine details are suppressed, leading to a smoother reconstruction. At the same time, the stronger regularization improves conditioning and numerical stability, typically accelerating convergence. Conversely, decreasing $\varepsilon$ lowers the threshold, fewer coefficients are annihilated, and more local variations (hence more details) are preserved; however, the problem then approaches the ill-conditioned least-squares inversion, making the reconstruction more sensitive to noise and generally increasing the number of iterations required for convergence.
+
+
 \subsection*{Question 5: Experimenting with Step Sizes ($\alpha$)} 
+
+% --- Figures Comparison for Question 5 (Step size p) ---
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Optimal Step Size ($p=1$):} The step size is maximal ($\alpha = 1/L$). Convergence is extremely fast and smooth for both ISTA and FISTA, yielding a high-quality visual reconstruction rapidly.}
+    \label{fig:step_optimal}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p8_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p8_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Reduced Step Size ($p=8$):} Severe ``ripples'' appear in FISTA's convergence curve due to the momentum imbalance relative to the small gradient steps. Overall convergence is slowed down.}
+    \label{fig:step_reduced}
+\end{figure}
 
 % We investigated the step size by setting $\alpha = \frac{1}{p L}$ and varying $p$.
 % For $p = 1$, the step size is maximal and theoretically optimal, leading to the fastest, most fluid convergence for both algorithms. 
@@ -221,6 +299,36 @@ acts as a contraction by shrinking the coordinates and possibly setting small on
 
 \subsection*{Question 6: Experimenting with Blurring Parameters}
 
+% --- Figures Comparison for Question 6 (Blur Parameters) ---
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz0.01_bx0.03.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz0.01_bx0.03.png}
+    \end{minipage}
+    \caption{\textbf{Weak Blur ($bz=0.01, bx=0.03$):} The operator $A$ is well-conditioned (close to the identity). Algorithms rapidly recover the original image with very high fidelity.}
+    \label{fig:blur_weak}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz1.0_bx3.0.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz1.0_bx3.0.png}
+    \end{minipage}
+    \caption{\textbf{Strong Blur ($bz=1.0, bx=3.0$):} The ill-conditioned operator $A$ significantly slows down convergence in flat spectral directions. High-frequency details are permanently lost during the blurring process, leading to a softer visual reconstruction.}
+    \label{fig:blur_strong}
+\end{figure}
+
 % The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
 % With weak blur ($bz=0.01, bx=0.03$), the operator $A$ is close to the identity matrix. The problem is well-conditioned, and algorithms recover the original image rapidly with few iterations.
 % With strong blur ($bz=1.0, bx=3.0$), the kernel acts as an aggressive low-pass filter, erasing high frequencies. The matrix $A^TA$ becomes highly ill-conditioned, possessing many eigenvalues near zero. Consequently, the reconstructed image lacks sharpness. Interestingly, we observed that the inner Conjugate Gradient (CG) solver used for Douglas-Rachford converges faster per iteration under strong blur, likely because the extreme smoothing artificially regularizes the local spectral properties of the linear system.
@@ -291,79 +399,6 @@ To circumvent this issue, we solve the linear system iteratively using the Conju
 In practice, we observed that each Douglas–Rachford iteration is significantly more expensive than ISTA or FISTA, since it requires solving a linear system with Conjugate Gradient. However, the warm start strategy makes the inner CG solver converge in only a few iterations after the first steps. 
 
 Compared to FISTA, Douglas–Rachford appears more stable and less oscillatory in its behavior. Although it does not always reach the solution as quickly in terms of wall-clock time and iterations, its updates are often smoother and less sensitive to parameter tuning (there is not step size).
-
-
-% ===============
-% SECTION FIGURES 
-% ===============
-\newpage
-\section{Numerical Results and Visual Reconstructions}
-
-This section visually illustrates the theoretical points discussed in the report. For each specific configuration, we present the convergence curve alongside the resulting visual reconstruction.
-
-% Figure 1 : Base Case
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p2_bz0.1_bx0.3.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p2_bz0.1_bx0.3.png}
-    \end{minipage}
-    \caption{\textbf{Base Configuration ($\epsilon=10^{-4}, p=2$, weak blur):} FISTA and Douglas-Rachford converge significantly faster than ISTA. The resulting image is successfully restored with well-preserved edges.}
-    \label{fig:base_case}
-\end{figure}
-
-% Figure 2 : Step size (p=8)
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p8_bz0.1_bx0.3.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p8_bz0.1_bx0.3.png}
-    \end{minipage}
-    \caption{\textbf{Reduced Step Size ($p=8$):} Note the severe ``ripples'' in FISTA's convergence curve due to the momentum imbalance. The visual reconstruction may be slightly degraded compared to the base case due to slower overall convergence.}
-    \label{fig:step_size}
-\end{figure}
-
-\newpage
-
-% Figure 3 : Epsilon (très petit)
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-12_p2_bz0.1_bx0.3.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/visual_eps1e-12_p2_bz0.1_bx0.3.png}
-    \end{minipage}
-    \caption{\textbf{Small Regularization ($\epsilon=10^{-12}$):} The lack of $\ell_1$ penalty reduces the problem to an ill-conditioned least-squares inversion. This amplifies numerical noise and creates visible wavy artifacts in the reconstructed image.}
-    \label{fig:epsilon}
-\end{figure}
-
-% Figure 4 : Strong blur
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-04_p1_bz1.0_bx3.0.png}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{results_project/visual_eps1e-04_p1_bz1.0_bx3.0.png}
-    \end{minipage}
-    \caption{\textbf{Strong Blur ($bz=1.0, bx=3.0$):} The heavily ill-conditioned operator $A$ slows down effective convergence. Much of the fine high-frequency detail is permanently lost during the physical blurring process, leading to a softer visual reconstruction despite optimal algorithmic convergence.}
-    \label{fig:blur}
-\end{figure}
-
-\end{document}
 
 
 \end{document}
