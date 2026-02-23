@@ -25,41 +25,20 @@
 \newcommand{\prox}{\text{prox}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
-% --- Titre ---
-\title{\textbf{Numerical Project in Python n.1: Image Deblurring}\\
-\large 4OPT2 - Continuous Optimisation}
-\author{Nathanaël SEROPIAN \and Ramzi JEBALI}
-\date{February 2026}
-
 \begin{document}
 
-\maketitle
+% --- En-tête compact ---
+\begin{center}
+    {\Large \textbf{Numerical Project in Python n.1: Image Deblurring}} \\[0.15cm]
+    {\large 4OPT2 - Continuous Optimisation} \\[0.2cm]
+    \textit{Nathanaël SEROPIAN \& Ramzi JEBALI} \hfill \textit{February 2026}
+\end{center}
+\vspace{-0.3cm} % Remonte légèrement le texte de l'introduction
+\hrule
+\vspace{0.1cm}
 
 \section*{Introduction}
 The goal of this project is to code a forward-backward method with Nesterov's acceleration (FISTA) to solve an image deblurring problem using $l_1$ regularization.
-
-\section{The Problem to Solve}
-
-We consider the following optimization problem:
-\begin{equation}
-    \min_{x \in \R^n} F(x) := \underbrace{\frac{1}{2} \norm{CW^H x - b}_2^2}_{f_1(x)} + \underbrace{\epsilon \norm{x}_1}_{f_2(x)}
-    \label{eq:prob}
-\end{equation}
-where:
-\begin{itemize}
-    \item $b \in \R^m$ is the observed (blurred and noisy) image.
-    \item $C$ is the blurring operator (convolution).
-    \item $W^H$ is the inverse wavelet transform (synthesis operator).
-    \item $x$ represents the wavelet coefficients of the image.
-    \item We denote $A = CW^H$.
-\end{itemize}
-
-We define the Forward-Backward algorithm (or Proximal Gradient Method) as:
-\begin{equation}
-    x_{k+1} = \prox_{\alpha f_2} \left( x_k - \alpha \nabla f_1(x_k) \right)
-\end{equation}
-where $\alpha > 0$ is the step size.
-
 
 \section{Theoretical Part}
 
@@ -73,8 +52,7 @@ The objective function $F$ is the sum of two functions:
 \end{itemize}
 Since the sum of two convex functions is convex, $F$ is convex. As we minimize a convex function over a convex set, the problem is convex.
 
-$$0 \preceq \nabla^2 f_1(x) = A^T A \preceq \sigma_{\max}^2(A)$$ so $f_1 \in \mathcal{C}_{L}^{1,1}$
-
+$$0 \preceq \nabla^2 f_1(x) = A^T A \preceq \sigma_{\max}^2(A)$$ so $f_1 \in \mathcal{C}_{L}^{1,1}$.
 Thus, as $f_1$ is convex, $f_1 \in \mathcal{S}_{0,L}^{1,1}$ with the Lipschitz constant:
 $L = \sigma_{\max}^2(A) = \lambda_{\max}(A^T A)$
 
@@ -88,9 +66,9 @@ The proximal gradient method reads:
 \end{equation}
 
 First, we compute the gradient of the smooth part:
-\begin{equation}
+$
     \nabla f_1(x_k) = A^T(Ax_k - b).
-\end{equation}
+$
 
 Solving the proximal step calling $v_k = x_k - \alpha \nabla f_1(x_k)$, the problem becomes:
 \begin{equation}
@@ -98,9 +76,9 @@ Solving the proximal step calling $v_k = x_k - \alpha \nabla f_1(x_k)$, the prob
 \end{equation}
 
 The last set of equations reads, for all components $i$:
-\begin{equation}
+$
     \alpha \epsilon \partial |[z]_i| + [z]_i \ni [v_k]_i.
-\end{equation}
+$
 
 We have now several possibilities, recalling that $\partial |[z]_i|$ depends on the sign of $[z]_i$:
 \begin{align}
@@ -128,7 +106,7 @@ This demonstrates that the proximal gradient applied to the $\ell_1$ regularized
 \subsection*{Question 3: Implementation and Convergence}
 
 % --- Figure pour la Question 3 ---
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
@@ -149,7 +127,7 @@ As theoretically expected, ISTA exhibits a slow, monotonic convergence character
 
 % --- Figures Comparison for Question 4 (\epsilon) ---
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
@@ -163,7 +141,7 @@ As theoretically expected, ISTA exhibits a slow, monotonic convergence character
     \label{fig:eps_large}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
@@ -197,7 +175,7 @@ Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective 
 
 % --- Figures Comparison for Question 5 (Step size p) ---
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
@@ -211,7 +189,7 @@ Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective 
     \label{fig:step_optimal}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{minipage}{0.48\textwidth}
         \centering
@@ -357,11 +335,44 @@ A^TA v_i=\sigma_i^2 v_i,
 and the gradient $\nabla f(x)=A^T(Ax-b)$ scales that direction proportionally to $\sigma_i^2$. When the singular values are not too small, the gradient provides effective corrections in every direction. Since only limited information is lost during the blurring process, the reconstruction is visually accurate.
 
 With strong blur ($bz=0.01, bx=0.03$), the operator $A$ strongly attenuates fine-scale variations in the image. Many singular values of $A$ become very small, which makes $A^TA$ ill-conditioned. In the corresponding directions, the gradient corrections are weak (as they are proportional to $\sigma_i^2$), so the algorithms progress slowly along those components. More importantly, strong blur removes a significant part of the fine information from the image. Since the reconstruction seeks an image $x$ such that $Ax$ matches the blurred observation, any detail that has been almost suppressed by $A$ cannot be reliably recovered. The degradation of visual quality under strong blur is therefore not only a numerical issue, but also an intrinsic loss of information.
+
 \subsection*{Question 7: Impact of the Sampling Parameter}
+
+% --- Figures Comparison for Question 7 (Sampling Parameter) ---
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        % Remplace par le nom exact de ta courbe de base avec sampling=5
+        \includegraphics[width=\linewidth]{results_project/convergence_eps1e-08_p1_bz0.1_bx0.3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        % Remplace par le nom exact de ton image de base avec sampling=5
+        \includegraphics[width=\linewidth]{results_project/visual_eps1e-08_p1_bz0.1_bx0.3.png}
+    \end{minipage}
+    \caption{\textbf{Base Resolution (Sampling = 5):} The problem dimension is relatively small. The algorithms compute each iteration very fast in terms of wall-clock time, but the inherent resolution of the reconstructed image is limited.}
+    \label{fig:sampling_5}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/fista_sampling3.png}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{results_project/visual_sampling3.png}
+    \end{minipage}
+    \caption{\textbf{Higher Resolution (Sampling = 3):} The number of pixels is multiplied by approximately $2.77$. While the algorithmic convergence behavior per iteration remains theoretically similar, the computational cost (wall-clock time) per iteration is drastically increased due to the larger 2D convolution and wavelet operators. However, the final visual reconstruction preserves much finer details.}
+    \label{fig:sampling_3}
+\end{figure}
 
 % Decreasing the sampling parameter (e.g., from 5 to 3 for the dog image) preserves a higher resolution of the original image. The total number of pixels $n$ scales proportionally to $1/\text{sampling}^2$. Changing the sampling from 5 to 3 multiplies the problem dimension $n$ by approximately $(5/3)^2 \approx 2.77$.
 % Since the computational bottleneck in ISTA and FISTA lies in the application of the 2D Convolutions and Discrete Wavelet Transforms (which run in $\mathcal{O}(n \log n)$ time), the execution time per iteration scales almost linearly with the number of pixels. Consequently, processing higher-resolution images requires significantly more computational time, emphasizing the need for accelerated schemes like FISTA.
-Decreasing the sampling parameter (e.g., from 5 to 3 for the dog image) preserves a higher resolution of the original image. The total number of pixels $n$ scales proportionally to $1/\text{sampling}^2$. Changing the sampling from 5 to 3 therefore multiplies the problem dimension by approximately $(5/3)^2 \approx 2.77$.
+Decreasing the sampling parameter (from 5 to 3 for the dog image) preserves a higher resolution of the original image. The total number of pixels $n$ scales proportionally to $1/\text{sampling}^2$. Changing the sampling from 5 to 3 therefore multiplies the problem dimension by approximately $(5/3)^2 \approx 2.77$.
 
 At each iteration, the dominant computational cost comes from large matrix–vector operations involving the operator $A$ and its transpose. These operations require processing all image pixels, so their cost scales proportionally to the problem dimension $n$. Consequently, when the sampling parameter decreases and the image resolution increases, the number of pixels grows significantly, which directly increases the computational time per iteration.
 
