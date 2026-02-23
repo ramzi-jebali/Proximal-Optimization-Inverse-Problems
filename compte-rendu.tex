@@ -136,7 +136,7 @@ As theoretically expected, ISTA exhibits a slow, monotonic convergence character
 % When $\epsilon$ is large (e.g., $10^{-4}$), the algorithm aggressively forces many wavelet coefficients to zero. Visually, this produces a heavily smoothed image, effectively eliminating noise but also destroying fine details, which can result in a "blocky" or painted effect. Convergence is generally faster due to the restricted effective search space. 
 % Conversely, for very small values (e.g., $10^{-12}$), the $\ell_1$ penalty becomes negligible, and the problem acts almost like pure least-squares. While textures are better preserved, the ill-conditioned nature of the blur operator introduces severe numerical artifacts and noise amplification.
 
-\paragraph{Impact of $\varepsilon$.}
+
 The parameter $\varepsilon$ controls the strength of the $\ell_1$ regularization term and therefore the sparsity of the solution. 
 To interpret the role of $\varepsilon$, we rely on the ISTA solution formula established previously. Componentwise, the solution is given by the soft-thresholding operator
 \begin{equation}
@@ -147,10 +147,19 @@ where $\alpha$  is the step size  and can be for example $\alpha = \frac{1}{L}$ 
 Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective threshold is $\alpha\varepsilon$. Increasing $\varepsilon$ therefore increases the threshold, so more coefficients are set exactly to zero, small-amplitude variations in the pixels are removed, and fine details are suppressed, leading to a smoother reconstruction. At the same time, the stronger regularization improves conditioning and numerical stability, typically accelerating convergence. Conversely, decreasing $\varepsilon$ lowers the threshold, fewer coefficients are annihilated, and more local variations (hence more details) are preserved; however, the problem then approaches the ill-conditioned least-squares inversion, making the reconstruction more sensitive to noise and generally increasing the number of iterations required for convergence.
 \subsection*{Question 5: Experimenting with Step Sizes ($\alpha$)} 
 
-We investigated the step size by setting $\alpha = \frac{1}{p L}$ and varying $p$.
-For $p = 1$, the step size is maximal and theoretically optimal, leading to the fastest, most fluid convergence for both algorithms. 
-When $p > 1$ (e.g., $p = 8$), the step size is artificially reduced. For ISTA, this simply slows down the convergence slope. For FISTA, however, reducing the step size introduces significant "ripples" or oscillations in the convergence curve. This happens because the momentum accumulates too much inertia relative to the small gradient steps, causing the algorithm to repeatedly overshoot the optimal trajectory and correct itself.
-
+% We investigated the step size by setting $\alpha = \frac{1}{p L}$ and varying $p$.
+% For $p = 1$, the step size is maximal and theoretically optimal, leading to the fastest, most fluid convergence for both algorithms. 
+% When $p > 1$ (e.g., $p = 8$), the step size is artificially reduced. For ISTA, this simply slows down the convergence slope. For FISTA, however, reducing the step size introduces significant "ripples" or oscillations in the convergence curve. This happens because the momentum accumulates too much inertia relative to the small gradient steps, causing the algorithm to repeatedly overshoot the optimal trajectory and correct itself.
+\paragraph{Impact of the step size $\alpha$.}
+We set $\alpha = \frac{1}{pL}$ with $p \ge 1$, where $L$ is the largest singular value of $A$. When $p=1$, the step size is maximal and yields the fastest convergence guaranteed by theory. When $p>1$, $\alpha$ is reduced. Since ISTA is based on a gradient step of the form
+\[
+x^{k+1} \approx x^k - \alpha \nabla f(x^k),
+\]
+a smaller $\alpha$ simply means smaller updates at each iteration, so more iterations are required to reach the same accuracy. The thresholding step remains
+\[
+x_i^* = \operatorname{sign}(z_i)\max(|z_i|-\alpha\varepsilon,0),
+\]
+so decreasing $\alpha$ also lowers the effective threshold $\alpha\varepsilon$, but the theoretical minimizer is unchanged as long as $\alpha \le 1/L$. In practice, with a fixed number of iterations, smaller step sizes lead to slower convergence and therefore poorer visual reconstruction. For FISTA, reducing $\alpha$ can increase oscillations in the objective curve: the acceleration (momentum) term continues to extrapolate the iterate, while the gradient correction becomes weaker, which may cause repeated overshooting and corrections before stabilizing.
 \subsection*{Question 6: Experimenting with Blurring Parameters}
 
 The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
