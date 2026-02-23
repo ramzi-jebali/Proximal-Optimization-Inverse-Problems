@@ -33,13 +33,12 @@
     {\large 4OPT2 - Continuous Optimisation} \\[0.2cm]
     \textit{Nathanaël SEROPIAN \& Ramzi JEBALI} \hfill \textit{February 2026}
 \end{center}
-\vspace{-0.3cm} % Remonte légèrement le texte de l'introduction
+\vspace{-0.5cm} % Remonte légèrement le texte de l'introduction
+\vspace{0.25cm}
 \hrule
-\vspace{0.1cm}
 
 \section*{Introduction}
-The goal of this project is to code a forward-backward method with Nesterov's acceleration (FISTA) to solve an image deblurring problem using $l_1$ regularization.
-
+The goal of this project is to solve the optimization problem $\min_x \tfrac12\|Ax-b\|^2 + \varepsilon\|x\|_1$, which aims at recovering an image $x$ such that, once blurred by the operator $A$, it matches the observed blurred image $b$. To this end, we implement a forward–backward method with Nesterov's acceleration (FISTA) to address this $\ell_1$-regularized deblurring problem.
 \section{Theoretical Part}
 
 % --- Question 1 ---
