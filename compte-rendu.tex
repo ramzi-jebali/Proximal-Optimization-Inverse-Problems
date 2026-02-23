@@ -161,21 +161,28 @@ Hence, if $|[v_k]_i|\le \alpha\varepsilon$, then $[x_{k+1}]_i=0$: the effective 
 % \]
 % so decreasing $\alpha$ also lowers the effective threshold $\alpha\varepsilon$, but the theoretical minimizer is unchanged as long as $\alpha \le 1/L$. In practice, with a fixed number of iterations, smaller step sizes lead to slower convergence and therefore poorer visual reconstruction. For FISTA, reducing $\alpha$ can increase oscillations in the objective curve: the acceleration (momentum) term continues to extrapolate the iterate, while the gradient correction becomes weaker, which may cause repeated overshooting and corrections before stabilizing.
 
-We investigated the effect of the step size by setting $\alpha = \frac{1}{p L}$ and varying the denominator parameter $p \ge 1$. 
-When $p=1$, the step size $\alpha$ is maximal and yields the fastest convergence guaranteed by the theory ($\mathcal{O}(1/k)$ for ISTA, $\mathcal{O}(1/k^2)$ for FISTA). 
+% We investigated the effect of the step size by setting $\alpha = \frac{1}{p L}$ and varying the denominator parameter $p \ge 1$. 
+% When $p=1$, the step size $\alpha$ is maximal and yields the fastest convergence guaranteed by the theory ($\mathcal{O}(1/k)$ for ISTA, $\mathcal{O}(1/k^2)$ for FISTA). 
 
-When $p>1$, the step size $\alpha$ is artificially reduced. Because the proximal step is $x_i = \operatorname{sign}(z_i)\max(|z_i|-\alpha\varepsilon, 0)$, decreasing $\alpha$ also lowers the effective threshold. However, the main impact is on the dynamics of the algorithms:
+% When $p>1$, the step size $\alpha$ is artificially reduced. Because the proximal step is $x_i = \operatorname{sign}(z_i)\max(|z_i|-\alpha\varepsilon, 0)$, decreasing $\alpha$ also lowers the effective threshold. However, the main impact is on the dynamics of the algorithms:
 
-\begin{itemize}
-    \item \textbf{For ISTA:} A smaller $\alpha$ simply means the algorithm takes smaller "safe" gradient steps at each iteration. The convergence remains smooth and monotonic, but it becomes much slower to reach the same accuracy.
+% \begin{itemize}
+%     \item \textbf{For ISTA:} A smaller $\alpha$ simply means the algorithm takes smaller "safe" gradient steps at each iteration. The convergence remains smooth and monotonic, but it becomes much slower to reach the same accuracy.
     
-    \item \textbf{For FISTA:} Reducing $\alpha$ introduces significant "ripples" (oscillations) in the objective curve. To understand why, we must look at the mechanics of Nesterov's acceleration. FISTA computes a standard gradient step ($y_{k+1}$), and then applies a momentum step (extrapolating to $x_{k+1}$). 
+%     \item \textbf{For FISTA:} Reducing $\alpha$ introduces significant "ripples" (oscillations) in the objective curve. To understand why, we must look at the mechanics of Nesterov's acceleration. FISTA computes a standard gradient step ($y_{k+1}$), and then applies a momentum step (extrapolating to $x_{k+1}$). 
     
-    The crucial point is that the momentum weight (often denoted $\beta_k$ or derived from $\gamma_k$) grows strictly with the iteration counter $k$ and is \textbf{independent of the step size $\alpha$}. By artificially reducing $\alpha$, we create a severe mechanical imbalance: the gradient "steering" becomes very weak, while the accumulated "inertia" remains huge. 
+%     The crucial point is that the momentum weight (often denoted $\beta_k$ or derived from $\gamma_k$) grows strictly with the iteration counter $k$ and is \textbf{independent of the step size $\alpha$}. By artificially reducing $\alpha$, we create a severe mechanical imbalance: the gradient "steering" becomes very weak, while the accumulated "inertia" remains huge. 
     
-    Consequently, the momentum forces the iterate to slide way past the gradient point $y_{k+1}$, repeatedly overshooting the optimal minimum. The algorithm then realizes it went too far, tries to correct its trajectory, but overshoots again due to the inertia. This back-and-forth correction is exactly what creates the waves on the convergence graph before it finally stabilizes.
-\end{itemize}
+%     Consequently, the momentum forces the iterate to slide way past the gradient point $y_{k+1}$, repeatedly overshooting the optimal minimum. The algorithm then realizes it went too far, tries to correct its trajectory, but overshoots again due to the inertia. This back-and-forth correction is exactly what creates the waves on the convergence graph before it finally stabilizes.
+% \end{itemize}
 
+We investigated the effect of the step size by setting $\alpha = \frac{1}{pL}$ with $p \ge 1$, where $L$ is the largest singular value of $A$. When $p=1$, the step size is maximal and ensures the fastest theoretical convergence rate ($\mathcal{O}(1/k)$ for ISTA and $\mathcal{O}(1/k^2)$ for FISTA). 
+
+When $p>1$, the step size $\alpha$ is reduced. Although the theoretical minimizer remains unchanged as long as $\alpha \le 1/L$, the convergence becomes slower. 
+
+In ISTA, a smaller $\alpha$ simply means smaller gradient steps at each iteration. The decrease of the objective remains smooth and monotonic, but more iterations are required to reach the same level of accuracy. Consequently, for a fixed number of iterations, a smaller $\alpha$ leads to a less accurate reconstruction and thus a poorer visual quality of the restored image.
+
+For FISTA, reducing $\alpha$ also slows down convergence, but it additionally amplifies oscillations in the objective curve. This comes from the acceleration mechanism: FISTA performs a gradient correction combined with an extrapolation step (momentum). When $\alpha$ is small, the gradient correction becomes weaker, while the extrapolation term remains active. As a result, the iterate may overshoot the minimum and then correct itself repeatedly, producing visible ripples in the convergence graph. Despite these oscillations, the method eventually stabilizes and keeps its accelerated convergence rate.
 \subsection*{Question 6: Experimenting with Blurring Parameters}
 
 The parameters $bz$ and $bx$ dictate the variance of the Gaussian blur kernel.
