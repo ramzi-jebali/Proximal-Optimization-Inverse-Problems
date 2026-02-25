@@ -1,93 +1,51 @@
-# 4OPT2 Project 1 - image deblurring
+# Convex Optimization for High-Dimensional Inverse Problems: Signal Recovery & Deblurring
 
+![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=flat&logo=numpy&logoColor=white)
+![SciPy](https://img.shields.io/badge/SciPy-%230C55A5.svg?style=flat&logo=scipy&logoColor=white)
+![Optimization](https://img.shields.io/badge/Math-Convex_Optimization-success)
+![Academic](https://img.shields.io/badge/Course-ENSTA_Paris_4OPT2-purple)
 
+## 📌 Overview
+This repository contains the numerical implementation of scalable first-order optimization algorithms to solve ill-posed inverse problems, developed as part of the *Continuous Optimisation (4OPT2)* course at ENSTA Paris / Institut Polytechnique de Paris. While visually applied to image deblurring, the mathematical core—recovering a sparse signal from noisy, convoluted observations using Total Variation (TV) regularization—is a fundamental framework in quantitative finance. These exact proximal methods are heavily utilized in systematic trading for microstructure noise filtering, order book denoising, and covariance matrix regularization.
 
-## Getting started
+## 📐 Mathematical Framework
+We address the inverse problem of reconstructing an unknown, high-dimensional true signal $x \in \mathbb{R}^n$ from a degraded and noisy observation $y \in \mathbb{R}^m$:
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+$$y = A x + \epsilon$$
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Where $A$ represents a linear degradation operator (e.g., convolution/blur) and $\epsilon \sim \mathcal{N}(0, \sigma^2 I)$ is Gaussian noise. To recover $x$, we solve the following non-smooth convex optimization problem using Tikhonov/Total Variation regularization:
 
-## Add your files
+$$\min_{x \in \mathbb{R}^n} \underbrace{\frac{1}{2} \|A x - y\|_2^2}_{f(x)} + \underbrace{\lambda \|D x\|_1}_{g(x)}$$
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- **$f(x)$**: The smooth data-fidelity term. Its gradient is Lipschitz continuous, computed efficiently as $\nabla f(x) = A^\top(Ax - y)$.
+- **$g(x)$**: The non-smooth regularization term, where $D$ is the discrete gradient operator. This enforces sparsity in the signal's variations (Isotropic Total Variation). It is handled implicitly via its **Proximal Operator** ($\text{prox}_{\gamma g}$).
 
-```
-cd existing_repo
-git remote add origin https://gitlab.ensta.fr/jebali/4opt2-project-1-image-deblurring.git
-git branch -M main
-git push -uf origin main
-```
+## ⚙️ Algorithms & Implementation
+To ensure scalability to $10^5+$ variables without memory overflow, black-box solvers were avoided. The optimization routines were fully implemented **from scratch**:
 
-## Integrate with your tools
+* **Forward-Backward Splitting (ISTA):** Implemented to alternate between explicit gradient descent steps on the smooth data-fidelity term and implicit proximal steps on the TV regularization, achieving an $\mathcal{O}(1/k)$ convergence rate.
+* **FISTA (Fast Iterative Shrinkage-Thresholding Algorithm):** An accelerated version leveraging Nesterov's momentum to improve the theoretical convergence rate to **$\mathcal{O}(1/k^2)$**. 
+* **Douglas-Rachford Splitting:** An advanced operator splitting method deployed to handle the sum of the convex functions. While computationally heavier per iteration, it is unconditionally stable and highly robust for ill-conditioned inverse problems.
+* **Sparse Matrix Operations:** The degradation operator $A$ and finite difference operator $D$ are constructed using `scipy.sparse`. All gradient computations are strictly **matrix-free** (relying on sparse matrix-vector multiplications) to avoid intractable dense matrix inversions.
 
-* [Set up project integrations](https://gitlab.ensta.fr/jebali/4opt2-project-1-image-deblurring/-/settings/integrations)
+## 📊 Results & Performance
+The algorithmic efficiency was benchmarked across 48 configurations (varying blur kernels, noise levels $\epsilon$, and parameters). The table below reports the **average execution time** for converging on the high-dimensional image grids.
 
-## Collaborate with your team
+| Metric | Forward-Backward (ISTA) | FISTA | Douglas-Rachford |
+| :--- | :--- | :--- | :--- |
+| **Convergence Rate** | $\mathcal{O}(1/k)$ | $\mathcal{O}(1/k^2)$ | $\mathcal{O}(1/k)$ |
+| **Average Execution Time** | **~41.03 s** | **~41.54 s** | ~102.11 s |
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+> **Performance Note:** While FISTA takes slightly longer per iteration (and thus has a similar overall time to ISTA), its Nesterov acceleration guarantees a strictly superior objective decay ($\mathcal{O}(1/k^2)$ vs $\mathcal{O}(1/k)$), making it the optimal choice for reaching high-precision stopping criteria.
 
-## Test and Deploy
+<p align="center">
+  <img src="figures/convergence_plot.png" width="45%" alt="Convergence Plot O(1/k^2)">
+  <img src="figures/deblurring_results.png" width="45%" alt="Signal Recovery Results">
+</p>
+<p align="center"><i>Left: Empirical convergence matching theoretical rates. Right: Restored signal from corrupted input.</i></p>
 
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## 🛠️ Tech Stack
+* **Core:** Python 3.10
+* **Mathematics & Matrices:** `numpy`, `scipy.sparse` (CSR/CSC formats), `scipy.sparse.linalg`
+* **Visualization:** `matplotlib`
